@@ -7,6 +7,7 @@ import { EntityManager, EntityRepository, MikroORM, RequestContext } from "@mikr
 import User from "./models/User";
 import { SqliteDriver } from "@mikro-orm/sqlite";
 import { authRouter } from "./controllers/auth";
+import errorMiddleware from "./middlewares/errorMiddleware";
 config();
 
 const app = express();
@@ -28,6 +29,7 @@ const init = (async()=>{
     app.use(cookieParser())
     app.use((req,res,next)=>RequestContext.create(DI.orm.em,next))
     app.use("/api/auth",authRouter)
+    app.use(errorMiddleware)
     app.listen(port,()=>{
         console.log(`[SERVER] Listen on port ${port}`)
     })
