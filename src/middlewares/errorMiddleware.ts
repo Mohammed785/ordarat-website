@@ -7,7 +7,7 @@ const errorMiddleware: ErrorRequestHandler = (err, req, res, next) => {
         message: err.message || "لقد حدث خطاء ما يرجي المحاولة مرة اخري",
         status: err.status || StatusCodes.INTERNAL_SERVER_ERROR,
         time: new Date().toUTCString(),
-        code:ErrorCodes.INTERNAL_SERVER_ERROR,
+        code:err.code||ErrorCodes.INTERNAL_SERVER_ERROR,
         entity:"",
         field:""
     };
