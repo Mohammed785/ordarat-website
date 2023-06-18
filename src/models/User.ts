@@ -2,7 +2,7 @@ import { Entity, Property } from "@mikro-orm/core";
 import BaseEntity from "./BaseEntity";
 
 @Entity()
-class User extends BaseEntity{
+export class User extends BaseEntity{
     @Property()
     firstName:string
 
@@ -15,7 +15,7 @@ class User extends BaseEntity{
     @Property()
     email:string
 
-    @Property()
+    @Property({hidden:true})
     password:string
 
     @Property()
@@ -31,12 +31,10 @@ class User extends BaseEntity{
     }
 }
 
-enum UserRoles {
+export enum UserRoles {
     ADMIN = "ADMIN",
     VENDOR = "VENDOR",
     AFFILIATE = "AFFILIATE",
     CALL_CENTER = "CALL_CENTER",
     OPERATION = "OPERATION",
-}
-
-export default User;
+};
