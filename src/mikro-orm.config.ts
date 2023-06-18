@@ -1,5 +1,5 @@
 import { LoadStrategy, Options } from "@mikro-orm/core";
-import User from "./models/User";
+import {User} from "./models/User";
 
 const options:Options = {
     entities:[User],

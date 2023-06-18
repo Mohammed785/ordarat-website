@@ -24,42 +24,42 @@ class CustomError extends Error {
 }
 
 class InternalServerError extends CustomError {
-    constructor(message: string) {
+    constructor(message: string, code = ErrorCodes.INTERNAL_SERVER_ERROR) {
         super(message);
         this.status = StatusCodes.INTERNAL_SERVER_ERROR;
-        this.code = ErrorCodes.INTERNAL_SERVER_ERROR
+        this.code = code
     }
 }
 
 class NotFoundError extends CustomError {
-    constructor(message: string) {
+    constructor(message: string,code = ErrorCodes.NOT_FOUND) {
         super(message);
         this.status = StatusCodes.NOT_FOUND;
-        this.code = ErrorCodes.NOT_FOUND
+        this.code = code
     }
 }
 
 class BadRequestError extends CustomError {
-    constructor(message: string) {
+    constructor(message: string, code = ErrorCodes.BAD_REQUEST) {
         super(message);
         this.status = StatusCodes.BAD_REQUEST;
-        this.code = ErrorCodes.BAD_REQUEST;
+        this.code = code;
     }
 }
 
 class ForbiddenError extends CustomError {
-    constructor(message: string) {
+    constructor(message: string, code = ErrorCodes.FORBIDDEN) {
         super(message);
         this.status = StatusCodes.FORBIDDEN;
-        this.code = ErrorCodes.FORBIDDEN;
+        this.code = code;
     }
 }
 
 class NotAuthenticatedError extends CustomError {
-    constructor(message: string) {
+    constructor(message: string,code=ErrorCodes.UNAUTHORIZED) {
         super(message);
         this.status = StatusCodes.UNAUTHORIZED;
-        this.code = ErrorCodes.UNAUTHORIZED;
+        this.code = code;
     }
 }
 
