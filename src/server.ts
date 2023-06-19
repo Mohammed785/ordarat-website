@@ -9,6 +9,9 @@ import { SqliteDriver } from "@mikro-orm/sqlite";
 import { authRouter } from "./controllers/auth";
 import errorMiddleware from "./middlewares/errorMiddleware";
 import { join } from "path";
+import { Product, Variant } from "./models/Product";
+import { productRouter } from "./controllers/product";
+import authMiddleware from "./middlewares/authMiddleware";
 config();
 
 const app = express();
@@ -18,12 +21,17 @@ export const DI = {} as {
     orm: MikroORM;
     em: EntityManager;
     userRepository: EntityRepository<User>;
+    productRepository: EntityRepository<Product>;
+    variantRepository: EntityRepository<Variant>;
+
 };
 const port = process.env.PORT || 8000;
 const init = (async()=>{
     DI.orm = await MikroORM.init<SqliteDriver>()
     DI.em  = DI.orm.em;
-    DI.userRepository = DI.orm.em.getRepository(User)
+    DI.userRepository = DI.orm.em.getRepository(User);
+    DI.productRepository = DI.orm.em.getRepository(Product);
+    DI.variantRepository = DI.orm.em.getRepository(Variant);
 
     app.use(express.json())
     app.use(bodyParser.urlencoded({extended:true}))
@@ -38,6 +46,10 @@ const init = (async()=>{
     app.set("view engine","pug");
     app.use((req,res,next)=>RequestContext.create(DI.orm.em,next))
     app.use("",authRouter)
+    app.use("",authMiddleware,productRouter)
+    app.use(async(req,res)=>{
+        return res.status(404).render("404.pug")
+    })
     app.use(errorMiddleware)
     app.listen(port,()=>{
         console.log(`[SERVER] Listen on port ${port}`)
