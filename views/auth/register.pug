@@ -1,0 +1,56 @@
+extends ../layout.pug
+block body
+    section(class="hero is-fullheight")
+        .hero-body 
+            .container 
+                h2(class="is-size-2 is-size-3-mobile has-text-centered mb-2") انشاء حساب
+                .columns.is-centered
+                    form(action="/api/auth/register", method="post",class="box has-background-light center-form") 
+                        .columns.is-multiline
+                            .column.is-6 
+                                .field
+                                    label(class="label")="الاسم الاول"
+                                    .control
+                                        input(type="text",class="input is-normal",name="firstName",placeholder="ادخل الاسم الاول")
+                            .column.is-6 
+                                .field
+                                    label(class="label")="الاسم الثاني"
+                                    .control
+                                        input(type="text",class="input is-normal",name="lastName",placeholder="ادخل الاسم الثاني")
+                        .field
+                            label(class="label")="رقم الهاتف"
+                            .control
+                                input(type="text",class="input is-normal",name="phone",placeholder="ادخل رقم الهاتف")
+                                span(class="icon is-left")
+                                    i(class="fas fa-phone")
+                            //- p(class="help")="eg.01112223444"
+                        .field
+                            label(class="label")="البريد الالكتروني"
+                            .control
+                                input(type="email",class="input is-normal",name="email",placeholder="ادخل البريد الالكتروني")
+                                span(class="icon is-left")
+                                    i(class="fas fa-phone")
+                            //- p(class="help")="eg.01112223444"
+                        .field 
+                            label(class="label")="كلمة السر"
+                            .control
+                                input(type="password",class="input is-normal" , name="password",placeholder="ادخل كلمة السر")
+                                span(class="icon is-left")
+                                    i(class="fas fa-password")
+                            //- p(class="help")="eg.01112223444"
+                        .field.is-narrow 
+                            label(class="label")="نوع المستخدم"
+                            .control
+                                label.radio
+                                    input(type="radio",class="ml-2",name="role",value="AFFILIATE")
+                                    ="مسوق"
+                                label.radio
+                                    input(type="radio",class="ml-2",name="role",value="VENDOR")
+                                    ="مورد"
+                            //- p(class="help")="eg.01112223444"
+                        .field 
+                            .control
+                                button(type="submit",class="button is-fullwidth is-primary")="انشاء"
+                        .field 
+                            .control 
+                                a(href="/login")="لدي حساب"

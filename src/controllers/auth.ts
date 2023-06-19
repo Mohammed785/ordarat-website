@@ -6,6 +6,14 @@ import { validationMiddleware } from "../middlewares/validationMiddleware";
 import { LoginDTO, RegisterDTO } from "../dto/auth";
 export const authRouter = Router();
 
+authRouter.get("/login",async(req,res)=>{
+    return res.render("auth/login")
+});
+
+authRouter.get("/register",async(req,res)=>{
+    return res.render("auth/register");
+})
+
 authRouter.post(
     "/api/auth/login",
     validationMiddleware(LoginDTO),

@@ -8,6 +8,7 @@ import {User} from "./models/User";
 import { SqliteDriver } from "@mikro-orm/sqlite";
 import { authRouter } from "./controllers/auth";
 import errorMiddleware from "./middlewares/errorMiddleware";
+import { join } from "path";
 config();
 
 const app = express();
@@ -32,6 +33,9 @@ const init = (async()=>{
         saveUninitialized:true,
         cookie:{httpOnly:true,secure:process.env.NODE_ENV==="production"?true:false,maxAge:1000*60*60*24},
     }))
+    app.use(express.static(join(__dirname,"..","public")))
+    app.set("views",join(__dirname,"..","views"));
+    app.set("view engine","pug");
     app.use((req,res,next)=>RequestContext.create(DI.orm.em,next))
     app.use("",authRouter)
     app.use(errorMiddleware)

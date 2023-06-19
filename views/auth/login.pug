@@ -1,0 +1,34 @@
+extends ../layout.pug
+block body
+    //- h1  #{msg}
+    //- if user
+    //-     h1 #{user.name}
+    //- else 
+    //-     h1 Please login
+    section(class="hero is-fullheight")
+        .hero-body 
+            .container 
+                .columns.is-centered
+                    .column.is-5-tablet.is-4-desktop.is-4-widescreen
+                        h2(class="is-size-2 is-size-3-mobile has-text-centered mb-2") سجل الدخول
+                        form(action="/api/auth/login", method="post",class="box has-background-light center-form") 
+                            .field
+                                label(class="label")="رقم الهاتف"
+                                .control.has-icon-left
+                                    input(type="text",class="input is-normal is-primary ",name="phone",placeholder="ادخل رقم الهاتف")
+                                    span(class="icon is-left")
+                                        i(class="fas fa-phone")
+                                //- p(class="help")="eg.01112223444"
+                            .field 
+                                label(class="label")="كلمة السر"
+                                .control.has-icon-left
+                                    input(type="password",class="input is-normal is-primary " , name="password",placeholder="ادخل كلمة السر")
+                                    span(class="icon is-left")
+                                        i(class="fas fa-password")
+                                //- p(class="help")="eg.01112223444"
+                            .field 
+                                .control
+                                    button(type="submit",class="button is-fullwidth is-primary")="سجل الدخول"
+                            .field 
+                                .control 
+                                    a(href="/register")="انشاء حساب"
