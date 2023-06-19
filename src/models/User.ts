@@ -1,5 +1,6 @@
-import { Entity, Property } from "@mikro-orm/core";
+import { Collection, Entity, OneToMany, Property } from "@mikro-orm/core";
 import BaseEntity from "./BaseEntity";
+import { Product } from "./Product";
 
 @Entity()
 export class User extends BaseEntity{
@@ -20,6 +21,9 @@ export class User extends BaseEntity{
 
     @Property()
     role:UserRoles
+
+    @OneToMany(()=>Product,"owner")
+    products = new Collection<Product>(this);
 
     constructor(firstName:string,lastName:string,phone:string,email:string,password:string){
         super();
