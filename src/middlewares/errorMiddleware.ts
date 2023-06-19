@@ -20,7 +20,7 @@ const errorMiddleware: ErrorRequestHandler = (err, req, res, next) => {
         customError.message = err.message;
     } else if (err instanceof ValidationError) {
         customError.message = err.message.split(",")[0];
-        customError.code = ErrorCodes.VALIDATION;
+        customError.code = ErrorCodes.DATABASE_VALIDATION;
         customError.status = StatusCodes.BAD_REQUEST;
     }
     return res.status(customError.status).json({ ...customError });
