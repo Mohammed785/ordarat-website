@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { DI } from "../server";
-import { BadRequestError, ErrorCodes, StatusCodes } from "../utils/errors";
+import { BadRequestError, ErrorCodes, ForbiddenError, NotFoundError, StatusCodes } from "../utils/errors";
 import { isInt } from "class-validator";
 import { UserRoles } from "../models/User";
 import rolesMiddleware from "../middlewares/rolesMiddleware";
@@ -12,60 +12,39 @@ export const productRouter = Router();
 
 productRouter.get(
     "/products",
-    rolesMiddleware([UserRoles.ADMIN, UserRoles.VENDOR]),
     async (req, res) => {
-        const productsFilter = req.query.products;
-        const isAdmin = req.session.user?.role === UserRoles.ADMIN;
-        let products;
-        if (req.session.user?.role === UserRoles.VENDOR) {
-            products = await DI.productRepository.find({
-                owner: req.session.user!.id,
-            });
-        } else if (isInt(productsFilter) && isAdmin) {
-            products = await DI.productRepository.find(
-                { owner: parseInt(productsFilter as string) },
-                {
-                    populate: req.query.owner
-                        ? ["owner.firstName", "owner.phone"]
-                        : [],
-                }
-            );
+        const products = await DI.productRepository.findAll();
+        if (req.get("Accept") === "application/json") {
+            return res.json({ products });
         } else {
-            products = await DI.productRepository.find({
-                owner: parseInt(productsFilter as string),
-            });
+            return res.render("product/list", { products });
         }
-        return res.render("product/list", { products });
     }
 );
 
 productRouter.get(
     "/product/:code",
-    rolesMiddleware([UserRoles.ADMIN, UserRoles.VENDOR]),
     async (req, res) => {
-        const isAdmin = req.session.user?.role === UserRoles.ADMIN;
-        const query = {code:req.params.code} as {code:string,owner:number}
-        if(!isAdmin){
-            query.owner = req.session.user!.id;
+        const product = await DI.productRepository.findOne({ code:req.params.code },{populate:["variants"]});
+        if (req.get("Accept") === "application/json") {
+            return res.json({ product });
+        } else {
+            return res.render("product/view", { product });
         }
-        const product = await DI.productRepository.findOne(
-            { ...query },
-            {
-                populate:
-                    req.query.owner && isAdmin
-                        ? ["owner.phone", "owner.firstName"]
-                        : [],
-            }
-        );
-        return res.render("product/view", { product });
     }
 );
+
+
 
 productRouter.get("/api/product/me", async (req, res) => {
     const products = await DI.productRepository.find({
         owner: req.session.user!.id,
     });
-    return res.json({ products });
+    if (req.get("Accept") === "application/json") {
+        return res.json({ products });
+    } else {
+        return res.render("product/list", { products });
+    }
 });
 
 productRouter.post(
@@ -105,23 +84,35 @@ productRouter.put(
     rolesMiddleware([UserRoles.ADMIN, UserRoles.VENDOR]),
     validationMiddleware(ProductDTO, true),
     async (req, res) => {
-        const product = DI.productRepository.getReference(
-            parseInt(req.params.productId)
-        );
-        DI.productRepository.assign(product, req.body);
-        await DI.em.flush();
+        const query = { id: parseInt(req.params.productId) } as {id:number,owner:number};
+        if(req.session.user?.role===UserRoles.VENDOR){
+            query.owner = req.session.user.id;
+        }
+        const product = await DI.productRepository.nativeUpdate({
+            ...query
+        },{...req.body});
+        if(product===0){
+            throw new BadRequestError(
+                "لا يمكنك تعديل المنتج لانة اما غير موجود او ليس ملكك"
+            );
+        }
         return res.status(StatusCodes.ACCEPTED).json({ product });
     }
 );
 
 productRouter.put(
-    "/api/product/:variantId",
+    "/api/variant/:variantId",
     rolesMiddleware([UserRoles.ADMIN, UserRoles.VENDOR]),
     validationMiddleware(VariantDTO, true),
     async (req, res) => {
-        const variant = DI.variantRepository.getReference(
-            parseInt(req.params.variantId)
-        );
+        const variant = await DI.variantRepository.findOneOrFail({
+            id: parseInt(req.params.variantId),
+        },{failHandler(entityName, where) {
+            return new NotFoundError("المنتج غير موجود",ErrorCodes.ENTITY_NOT_FOUND)
+        }});
+        if( req.session.user?.role===UserRoles.VENDOR&&(await variant.product.load()).owner.id!==req.session.user!.id){
+            throw new ForbiddenError("انت لا تمتلك هذا المنتج لا يمكنك تعدلية")
+        }
         DI.variantRepository.assign(variant, req.body);
         await DI.em.flush();
         return res.status(StatusCodes.ACCEPTED).json({ variant });
@@ -132,24 +123,46 @@ productRouter.delete(
     "/api/product/:productId",
     rolesMiddleware([UserRoles.ADMIN, UserRoles.VENDOR]),
     async (req, res) => {
+        const query = { id: parseInt(req.params.productId) } as {
+            id: number;
+            owner: number;
+        };
+        if (req.session.user?.role === UserRoles.VENDOR) {
+            query.owner = req.session.user.id;
+        }
         const deleted = await DI.productRepository.nativeDelete({
-            id: parseInt(req.params.productId),
+            ...query
         });
+        if (deleted === 0) {
+            throw new BadRequestError(
+                "لا يمكنك حذف المنتج لانة اما غير موجود او ليس ملكك"
+            );
+        }
         return res
-            .status(deleted === 0 ? StatusCodes.NOT_FOUND : StatusCodes.OK)
-            .json({ deleted });
+        .json({ deleted });
     }
 );
 
 productRouter.delete(
-    "/api/product/:variantId",
+    "/api/variant/:variantId",
     rolesMiddleware([UserRoles.ADMIN, UserRoles.VENDOR]),
     async (req, res) => {
+        const query = { id: parseInt(req.params.variantId) } as {
+            id: number;
+            owner: number;
+        };
+        if (req.session.user?.role === UserRoles.VENDOR) {
+            query.owner = req.session.user.id;
+        }
         const deleted = await DI.variantRepository.nativeDelete({
-            id: parseInt(req.params.variantId),
+            ...query
         });
+        if (deleted === 0) {
+            throw new BadRequestError(
+                "لا يمكنك حذف المنتج لانة اما غير موجود او ليس ملكك"
+            );
+        }
         return res
-            .status(deleted === 0 ? StatusCodes.NOT_FOUND : StatusCodes.OK)
             .json({ deleted });
     }
 );

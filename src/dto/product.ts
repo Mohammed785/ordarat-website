@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { IsArray, IsInt, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
+import { IsArray, IsInt, IsNumber, IsOptional, IsString, MinLength, ValidateNested } from "class-validator";
 
 export class VariantDTO{
 
@@ -19,6 +19,7 @@ export class ProductDTO {
     name: string;
 
     @IsString({message:"يرجي ادخال كود المنتج"})
+    @MinLength(3,{message:"يجب ان يكون كود المنتج علي الاقل 3 حروف"})
     code: string;
 
     @IsOptional()
