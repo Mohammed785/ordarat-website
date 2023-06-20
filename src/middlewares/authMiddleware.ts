@@ -3,7 +3,10 @@ import { NotAuthenticatedError } from "../utils/errors";
 
 const authMiddleware: RequestHandler = (req, res, next) => {
     if (!req.session.user) {
-        if (req.baseUrl.includes("/api")) {
+        if (
+            req.originalUrl.includes("api") ||
+            req.get("Accept") === "application/json"
+        ) {
             throw new NotAuthenticatedError("يرجي تسجيل الدخول");
         } else {
             return res.redirect("/login");
