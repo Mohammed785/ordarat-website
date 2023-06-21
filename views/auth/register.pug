@@ -1,56 +1,49 @@
 extends ../layout.pug
 block body
-    section(class="hero is-fullheight")
-        .hero-body 
-            .container 
-                h2(class="is-size-2 is-size-3-mobile has-text-centered mb-2") انشاء حساب
-                .columns.is-centered
-                    form(action="/api/auth/register", method="post",class="box has-background-light center-form") 
-                        .columns.is-multiline
-                            .column.is-6 
-                                .field
-                                    label(class="label")="الاسم الاول"
-                                    .control
-                                        input(type="text",class="input is-normal",name="firstName",placeholder="ادخل الاسم الاول")
-                            .column.is-6 
-                                .field
-                                    label(class="label")="الاسم الثاني"
-                                    .control
-                                        input(type="text",class="input is-normal",name="lastName",placeholder="ادخل الاسم الثاني")
-                        .field
-                            label(class="label")="رقم الهاتف"
-                            .control
-                                input(type="text",class="input is-normal",name="phone",placeholder="ادخل رقم الهاتف")
-                                span(class="icon is-left")
-                                    i(class="fas fa-phone")
-                            //- p(class="help")="eg.01112223444"
-                        .field
-                            label(class="label")="البريد الالكتروني"
-                            .control
-                                input(type="email",class="input is-normal",name="email",placeholder="ادخل البريد الالكتروني")
-                                span(class="icon is-left")
-                                    i(class="fas fa-phone")
-                            //- p(class="help")="eg.01112223444"
-                        .field 
-                            label(class="label")="كلمة السر"
-                            .control
-                                input(type="password",class="input is-normal" , name="password",placeholder="ادخل كلمة السر")
-                                span(class="icon is-left")
-                                    i(class="fas fa-password")
-                            //- p(class="help")="eg.01112223444"
-                        .field.is-narrow 
-                            label(class="label")="نوع المستخدم"
-                            .control
-                                label.radio
-                                    input(type="radio",class="ml-2",name="role",value="AFFILIATE")
-                                    ="مسوق"
-                                label.radio
-                                    input(type="radio",class="ml-2",name="role",value="VENDOR")
-                                    ="مورد"
-                            //- p(class="help")="eg.01112223444"
-                        .field 
-                            .control
-                                button(type="submit",class="button is-fullwidth is-primary")="انشاء"
-                        .field 
-                            .control 
-                                a(href="/login")="لدي حساب"
+  main.main-content.mt-0
+    section.min-vh-100.mb-8
+      div(class="page-header align-items-start min-vh-50 pt-5 pb-11 m-3 border-radius-lg" style="background-image: url('/img/curved14.jpg');")
+        span.mask.bg-gradient-dark.opacity-6
+        div.container
+          div.row.justify-content-center
+            div.col-lg-5.text-center.mx-auto
+              h1.text-white.mb-2.mt-5="مرحبا!"
+              p.text-lead.text-white="املاء جميع البيانات للتسجيل"
+      div.container
+        div.row.mt-lg-n10.mt-md-n11.mt-n10
+          div.col-xl-5.col-lg-6.col-md-8.mx-auto
+            div.card.z-index-0
+              div.card-body
+                form(role="form text-left")
+                  div.row
+                    div.col 
+                      label="الاسم الاول"
+                      div.mb-3
+                        input(type="text" class="form-control" placeholder="Name" aria-label="Name" aria-describedby="email-addon")
+                    div.col
+                      label="الاسم الثاني"
+                      div.mb-3
+                        input(type="text" class="form-control" placeholder="Name" aria-label="Name" aria-describedby="email-addon")
+                  label="رقم الهاتف" 
+                  div.mb-3
+                    input(type="text" class="form-control" placeholder="Email" aria-label="Email" aria-describedby="email-addon")
+                  label="البريد الالكتروني" 
+                  div.mb-3
+                    input(type="email" class="form-control" placeholder="Email" aria-label="Email" aria-describedby="email-addon")
+                  label="كلمة المرور"
+                  div.mb-3
+                    input(type="password" class="form-control" placeholder="Password" aria-label="Password" aria-describedby="password-addon")
+                  label="نوع المستخدم"
+                  .row 
+                    .col
+                      div.form-check
+                        input(class="form-check-input" type="radio" name="flexRadioDefault" id="customRadio1")
+                        label(class="custom-control-label" for="customRadio1")="مسوق"
+                    .col
+                      div.form-check
+                        input(class="form-check-input" type="radio" name="flexRadioDefault" id="customRadio2")
+                        label(class="custom-control-label" for="customRadio2")="تاجر"
+                  div.text-center
+                    button(type="button" class="btn bg-gradient-dark w-100 my-4 mb-2")="انشاء حساب"
+                  p.text-sm.mt-3.mb-0="لديك حساب بالفعل؟ " 
+                    a(href="/login" class="text-dark font-weight-bolder")="سجل الدخول"

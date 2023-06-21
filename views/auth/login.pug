@@ -1,34 +1,29 @@
 extends ../layout.pug
 block body
-    //- h1  #{msg}
-    //- if user
-    //-     h1 #{user.name}
-    //- else 
-    //-     h1 Please login
-    section(class="hero is-fullheight")
-        .hero-body 
-            .container 
-                .columns.is-centered
-                    .column.is-5-tablet.is-4-desktop.is-4-widescreen
-                        h2(class="is-size-2 is-size-3-mobile has-text-centered mb-2") سجل الدخول
-                        form(action="/api/auth/login", method="post",class="box has-background-light center-form") 
-                            .field
-                                label(class="label")="رقم الهاتف"
-                                .control.has-icon-left
-                                    input(type="text",class="input is-normal is-primary ",name="phone",placeholder="ادخل رقم الهاتف")
-                                    span(class="icon is-left")
-                                        i(class="fas fa-phone")
-                                //- p(class="help")="eg.01112223444"
-                            .field 
-                                label(class="label")="كلمة السر"
-                                .control.has-icon-left
-                                    input(type="password",class="input is-normal is-primary " , name="password",placeholder="ادخل كلمة السر")
-                                    span(class="icon is-left")
-                                        i(class="fas fa-password")
-                                //- p(class="help")="eg.01112223444"
-                            .field 
-                                .control
-                                    button(type="submit",class="button is-fullwidth is-primary")="سجل الدخول"
-                            .field 
-                                .control 
-                                    a(href="/register")="انشاء حساب"
+  main.main-content.mt-0
+    section
+      div.page-header.min-vh-75
+        div.container
+          div.row
+            div.col-xl-4.col-lg-5.col-md-6.d-flex.flex-column.mx-auto
+             div.card.mt-8
+                div.card-header.pb-0.text-left.bg-transparent
+                  h3.font-weight-bolder.text-info.text-gradient="مرحبا بعودتك"
+                  p.mb-0="ادخل رقم الهاتف والبريد الالكتروني لتسجيل الدخول"
+                div.card-body
+                  form(role="form")
+                    label="رقم الهاتف"
+                    div.mb-3
+                      input(type="email" class="form-control" placeholder="ادخل رقم الهاتف" aria-label="Email" aria-describedby="email-addon")
+                    
+                    label="كلمة المرور"
+                    div.mb-3
+                      input(type="email" class="form-control" placeholder="ادخل كلمة المرور" aria-label="Password" aria-describedby="password-addon")
+                    div.text-center
+                      button(type="button" class="btn bg-gradient-info w-100 mt-4 mb-0")="سجل الدخول"
+                div.card-footer.text-center.pt-0.px-lg-2.px-1
+                  p.mb-4.text-sm.mx-auto="ليس لديك حساب؟ "
+                    a(href="/register" class="text-info text-gradient font-weight-bold")="انشاء حساب"
+            div.col-md-6
+              div.oblique-rtl.position-absolute.top-0.h-100.d-md-block.d-none.ms-n8
+               div(class="oblique-image-rtl bg-cover position-absolute fixed-top me-auto h-100 z-index-0 me-n6" style="background-image:url('/img/curved6.jpg')")
