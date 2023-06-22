@@ -12,6 +12,8 @@ import { join } from "path";
 import { Product, Variant } from "./models/Product";
 import { productRouter } from "./controllers/product";
 import authMiddleware from "./middlewares/authMiddleware";
+import { Order, OrderItem, ShippingCompany } from "./models/Order";
+import { orderRouter } from "./controllers/order";
 config();
 
 const app = express();
@@ -23,7 +25,9 @@ export const DI = {} as {
     userRepository: EntityRepository<User>;
     productRepository: EntityRepository<Product>;
     variantRepository: EntityRepository<Variant>;
-
+    orderRepository: EntityRepository<Order>;
+    orderItemRepository: EntityRepository<OrderItem>;
+    shippingRepository: EntityRepository<ShippingCompany>;
 };
 const port = process.env.PORT || 8000;
 const init = (async()=>{
@@ -32,7 +36,8 @@ const init = (async()=>{
     DI.userRepository = DI.orm.em.getRepository(User);
     DI.productRepository = DI.orm.em.getRepository(Product);
     DI.variantRepository = DI.orm.em.getRepository(Variant);
-
+    DI.orderRepository = DI.orm.em.getRepository(Order);
+    DI.orderItemRepository = DI.orm.em.getRepository(OrderItem);
     app.use(express.json())
     app.use(bodyParser.urlencoded({extended:true}))
     app.use(session({
@@ -45,8 +50,12 @@ const init = (async()=>{
     app.set("views",join(__dirname,"..","views"));
     app.set("view engine","pug");
     app.use((req,res,next)=>RequestContext.create(DI.orm.em,next))
+    app.get("/",async(req,res)=>{
+        return res.render("home.pug",{user:{id:1,name:"mohammed",role:"ADMIN"}})
+    })
     app.use("",authRouter)
     app.use("",authMiddleware,productRouter)
+    app.use("",authMiddleware,orderRouter)
     app.use(async(req,res)=>{
         return res.status(404).render("404.pug")
     })

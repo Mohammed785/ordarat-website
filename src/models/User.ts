@@ -1,6 +1,7 @@
 import { Collection, Entity, OneToMany, Property } from "@mikro-orm/core";
 import BaseEntity from "./BaseEntity";
 import { Product } from "./Product";
+import { Order } from "./Order";
 
 @Entity()
 export class User extends BaseEntity{
@@ -24,6 +25,12 @@ export class User extends BaseEntity{
 
     @OneToMany(()=>Product,"owner")
     products = new Collection<Product>(this);
+
+    @OneToMany(()=>Order,"affiliate")
+    ordersCreated = new Collection<Order>(this)
+
+    @OneToMany(()=>Order,"confirmedBy")
+    ordersConfirmed = new Collection<Order>(this)
 
     constructor(firstName:string,lastName:string,phone:string,email:string,password:string){
         super();

@@ -1,7 +1,9 @@
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
+import { Entity, OptionalProps, PrimaryKey, Property } from "@mikro-orm/core";
 
 @Entity({abstract:true})
 class BaseEntity{
+    [OptionalProps]?:"createdAt"|"updatedAt"
+    
     @PrimaryKey()
     id!:number
 
