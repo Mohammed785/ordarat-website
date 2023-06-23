@@ -4,18 +4,30 @@ import { OrderState } from "../models/Order";
 import { BadRequestError, ErrorCodes, NotFoundError } from "../utils/errors";
 import { ForeignKeyConstraintViolationException, UniqueConstraintViolationException } from "@mikro-orm/core";
 import { validationMiddleware } from "../middlewares/validationMiddleware";
-import { OrderDTO, OrderItemDTO, OrderWithItemsDTO, TestDTO } from "../dto/order";
+import { OrderDTO, OrderItemDTO, OrderWithItemsDTO } from "../dto/order";
 import rolesMiddleware from "../middlewares/rolesMiddleware";
 import { UserRoles } from "../models/User";
+import { EntityManager } from "@mikro-orm/sqlite";
+import { Variant } from "../models/Product";
 
 export const orderRouter = Router()
 
-
-
 orderRouter.get("/orders",async(req,res)=>{
-    // add pagination and filter by order state
-    const orders = await DI.orderRepository.find({});
-    return res.json({orders})
+    const {state,cursor,page_size} = req.query;
+    const filter:Record<string,any> = { id: { $gt: parseInt(cursor as string)||0 } };
+    if(state){
+        filter.orderState = state;
+    }
+    const DEFAULT_LIMIT = 25;
+    const orders = await DI.orderRepository.find(
+        {
+            ...filter,
+        },
+        { limit: parseInt(page_size as string)||DEFAULT_LIMIT }
+    );
+    const last = orders[parseInt(page_size as string)-1];
+    const next = last?last.id:-1
+    return res.json({orders,next})
 })
 orderRouter.post("/api/order",rolesMiddleware([UserRoles.ADMIN,UserRoles.AFFILIATE]),validationMiddleware(OrderWithItemsDTO),async(req,res)=>{
     try {
@@ -81,23 +93,30 @@ orderRouter.put(
 );
 
 orderRouter.put("/api/order/:orderId/confirm",rolesMiddleware([UserRoles.ADMIN,UserRoles.CALL_CENTER]),async(req,res)=>{
-    const order = DI.orderRepository.getReference(parseInt(req.params.orderId));
-    DI.orderRepository.assign(order,{confirmedBy:req.session.user!.id,orderState:OrderState.CONFIRMED});
-    await DI.em.flush();
+    const order = await DI.orderRepository.nativeUpdate(
+        {
+            id: parseInt(req.params.orderId),
+            orderState: OrderState.NOT_CONFIRMED,
+        },
+        { confirmedBy: req.session.user!.id, orderState: OrderState.CONFIRMED }
+    );
+    if(order===0){
+        throw new BadRequestError("الاوردر غير موجود او تم الغائة")
+    }
     return res.json({order});
 })
 
-// need more info like is the operation is the only one who can change state after confirmed
-// orderRouter.put("/api/order/:orderId/state",rolesMiddleware([UserRoles.ADMIN,UserRoles.OPERATION]),async(req,res)=>{
-//     const order = DI.orderRepository.getReference(parseInt(req.params.orderId));
-//     DI.orderRepository.assign(order,{orderState:OrderState.READY});
-//     await DI.em.flush();
-//     return res.json({order});
-// })
+orderRouter.put("/api/order/:orderId/delivered",rolesMiddleware([UserRoles.ADMIN,UserRoles.OPERATION]),async(req,res)=>{
+    const order = DI.orderRepository.getReference(parseInt(req.params.orderId));
+    // TODO
+    // await DI.em.flush();
+    return res.json({order});
+})
 
-orderRouter.delete("/api/order/:orderId",rolesMiddleware([UserRoles.ADMIN]),async(req,res)=>{
+orderRouter.delete("/api/order/:orderId",rolesMiddleware([UserRoles.ADMIN,UserRoles.OPERATION,UserRoles.CALL_CENTER]),async(req,res)=>{
     const order = await DI.orderRepository.findOneOrFail({
-        id:parseInt(req.params.orderId)
+        id:parseInt(req.params.orderId),
+        orderState:OrderState.NOT_CONFIRMED
     },{
         populate:["items"],
         failHandler(entityName, where) {
@@ -107,9 +126,17 @@ orderRouter.delete("/api/order/:orderId",rolesMiddleware([UserRoles.ADMIN]),asyn
         );
     }});
     for(const item of order.items){
-        DI.em.remove(item)
+        DI.em.assign(DI.orderItemRepository.getReference(item.id),{isCanceled:true})
     }
-    DI.em.removeAndFlush(order)
+    const isCallCenter = req.session.user?.role === UserRoles.CALL_CENTER;
+    order.orderState =
+        req.query.state === "refused" &&!isCallCenter
+            ? OrderState.REFUSED
+            : OrderState.CANCELED;
+    if(req.body.deliveryNotes&&!isCallCenter){
+        order.deliveryNotes = req.body.deliveryNotes
+    }
+    DI.em.flush()
     return res.json({order})
 })
 
@@ -142,10 +169,16 @@ orderRouter.post("/api/order/:orderId",rolesMiddleware([UserRoles.ADMIN, UserRol
 })
 
 orderRouter.delete("/api/orderItem/:itemId",rolesMiddleware([UserRoles.ADMIN, UserRoles.AFFILIATE]),async(req,res)=>{
-    const item = DI.orderItemRepository.getReference(parseInt(req.params.itemId));
-    await DI.em.removeAndFlush(item);
-    if(!item.variant){
-        throw new NotFoundError("الطلب غير موجود",ErrorCodes.ENTITY_NOT_FOUND);
-    }
+    const item = await DI.orderItemRepository.findOneOrFail({
+        id: parseInt(req.params.itemId),
+        isCanceled:false,
+    },{failHandler(entityName, where) {
+        return new NotFoundError("الطلب غير موجود",ErrorCodes.ENTITY_NOT_FOUND);
+    },});
+    const qb = (DI.em as EntityManager).createQueryBuilder(Variant);
+    await qb
+        .update({ unitAmount: qb.raw(`unit_amount+${item.qty}`) })
+        .where({ id: item.variant.id });
+    await DI.em.removeAndFlush(item)
     res.json({item})
 });

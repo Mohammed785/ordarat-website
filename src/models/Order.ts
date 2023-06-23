@@ -99,6 +99,9 @@ export class OrderItem extends BaseEntity {
     @Property()
     cost: number;
 
+    @Property()
+    isCanceled?:boolean=false
+
     constructor(
         qty: number,
         cost: number,
@@ -128,15 +131,17 @@ export class OrderItemSubscriber implements EventSubscriber<OrderItem> {
     getSubscribedEntities(): EntityName<OrderItem>[] {
         return [OrderItem];
     }
-    async beforeDelete(args: EventArgs<OrderItem>): Promise<void> {
-        const qb = (args.em as EntityManager).createQueryBuilder(Variant);
-        const item = await wrap(args.entity).init();
-        if (!item.variant) {
-            return;
+    async afterUpdate(args: EventArgs<OrderItem>): Promise<void> {        
+        if (args.changeSet?.payload.isCanceled&&!args.changeSet.originalEntity?.isCanceled) {
+            const qb = (args.em as EntityManager).createQueryBuilder(Variant);
+            const item = await wrap(args.entity).init();
+            if (!item.variant) {
+                return;
+            }
+            await qb
+                .update({ unitAmount: qb.raw(`unit_amount+${item.qty}`) })
+                .where({ id: item.variant.id });
         }
-        await qb
-            .update({ unitAmount: qb.raw(`unit_amount+${item.qty}`) })
-            .where({ id: item.variant.id });
     }
 }
 
@@ -178,6 +183,7 @@ export enum OrderState {
     NOT_CONFIRMED = "NOT_CONFIRMED",
     CONFIRMED = "CONFIRMED",
     READY = "READY",
+    WAITING = "WAITING",
     IN_DELIVERY = "IN_DELIVERY",
     CANCELED = "CANCELED",
     REFUSED = "REFUSED",
