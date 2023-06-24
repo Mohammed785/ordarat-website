@@ -114,21 +114,25 @@ orderRouter.put("/api/order/:orderId/delivered",rolesMiddleware([UserRoles.ADMIN
 })
 
 orderRouter.delete("/api/order/:orderId",rolesMiddleware([UserRoles.ADMIN,UserRoles.OPERATION,UserRoles.CALL_CENTER]),async(req,res)=>{
-    const order = await DI.orderRepository.findOneOrFail({
-        id:parseInt(req.params.orderId),
-        orderState:OrderState.NOT_CONFIRMED
-    },{
-        populate:["items"],
-        failHandler(entityName, where) {
-        return new NotFoundError(
-            "الاوردر غير موجود",
-            ErrorCodes.ENTITY_NOT_FOUND
-        );
-    }});
+    const isCallCenter = req.session.user?.role === UserRoles.CALL_CENTER;
+    const order = await DI.orderRepository.findOneOrFail(
+        {
+            id: parseInt(req.params.orderId),
+            orderState: !isCallCenter ? OrderState.NOT_CONFIRMED : {$ne:OrderState.NOT_CONFIRMED},
+        },
+        {
+            populate: ["items"],
+            failHandler(entityName, where) {
+                return new NotFoundError(
+                    "الاوردر غير موجود",
+                    ErrorCodes.ENTITY_NOT_FOUND
+                );
+            },
+        }
+    );
     for(const item of order.items){
         DI.em.assign(DI.orderItemRepository.getReference(item.id),{isCanceled:true})
     }
-    const isCallCenter = req.session.user?.role === UserRoles.CALL_CENTER;
     order.orderState =
         req.query.state === "refused" &&!isCallCenter
             ? OrderState.REFUSED

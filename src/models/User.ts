@@ -11,10 +11,10 @@ export class User extends BaseEntity{
     @Property()
     lastName:string
 
-    @Property()
+    @Property({index:true,unique:true})
     phone:string
     
-    @Property()
+    @Property({unique:true})
     email:string
 
     @Property({hidden:true})
