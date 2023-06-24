@@ -2,14 +2,30 @@ doctype html
 html(lang="ar",dir="rtl")
     head
         block head
-            meta(charset="UTF-8")
-            meta(http-equiv="X-UA-Compatible", content="IE=edge")
-            meta(name="viewport", content="width=device-width, initial-scale=1.0")
-            link(rel="stylesheet", href="css/bulma-rtl.min.css")
-            link(rel="stylesheet", href="css/styles.css")
-            title handle
-    body     
-        block body
+        meta(charset="UTF-8")
+        meta(http-equiv="X-UA-Compatible", content="IE=edge")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        link(rel="icon" type="image/png" href="/img/favicon.png")
+        link(href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700" rel="stylesheet")
+        link(href="/css/nucleo-icons.css" rel="stylesheet")
+        link(href="/css/nucleo-svg.css" rel="stylesheet")
+        script(src="https://kit.fontawesome.com/42d5adcbca.js" crossorigin="anonymous")
+        link(href="/css/nucleo-svg.css" rel="stylesheet")
+        link(id="pagestyle" href="/css/soft-ui-dashboard.css?v=1.0.7" rel="stylesheet")
+        link(rel="stylesheet", href="css/styles.css")
+        title handle
+    body.g-sidenav-show.rtl.bg-gray-100
+        div#alerts-area
 
+        block body
+            include sidebar.pug
+            main.main-content.position-relative.max-height-vh-100.h-100.border-radius-lg 
+              block content  
         block scripts
             script(src="js/jquery-3.7.0.min.js") 
+            script(src="/js/core/popper.min.js")
+            script(src="/js/core/bootstrap.min.js")
+            script(src="/js/plugins/perfect-scrollbar.min.js")
+            script(src="/js/plugins/smooth-scrollbar.min.js") 
+            script(src="/js/soft-ui-dashboard.min.js?v=1.0.7")
+            script(src="/js/main.js")
