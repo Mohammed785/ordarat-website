@@ -14,36 +14,65 @@ block body
           div.col-xl-5.col-lg-6.col-md-8.mx-auto
             div.card.z-index-0
               div.card-body
-                form(role="form text-left")
+                form(role="form text-left" method="POST" id="registerForm")
                   div.row
                     div.col 
                       label="الاسم الاول"
                       div.mb-3
-                        input(type="text" class="form-control" placeholder="Name" aria-label="Name" aria-describedby="email-addon")
+                        input(type="text" name="firstName" id="firstName" minlength="2" maxlength="25" class="form-control rtl" placeholder="ادخل الاسم الاول" aria-label="الاسم الاول" aria-describedby="invalid-firstName" required)
+                        p.invalid-feedback#invalid-firstName
                     div.col
                       label="الاسم الثاني"
                       div.mb-3
-                        input(type="text" class="form-control" placeholder="Name" aria-label="Name" aria-describedby="email-addon")
-                  label="رقم الهاتف" 
+                        input(type="text" name="lastName" id="lastName" minlength="2" maxlength="25" class="form-control rtl" placeholder="ادخل الاسم الثاني" aria-label="الاسم الثاني" aria-describedby="invalid-lastName" required)
+                        p.invalid-feedback#invalid-lastName
+                  label="رقم الهاتف"
                   div.mb-3
-                    input(type="text" class="form-control" placeholder="Email" aria-label="Email" aria-describedby="email-addon")
+                    input(type="text" name="phone" id="phone" class="form-control rtl" minlength="11" maxlength="11" placeholder="ادخل رقم الهاتف" aria-label="رقم الهاتف" aria-describedby="invalid-phone" required)
+                    p.invalid-feedback#invalid-phone
                   label="البريد الالكتروني" 
                   div.mb-3
-                    input(type="email" class="form-control" placeholder="Email" aria-label="Email" aria-describedby="email-addon")
+                    input(type="email" class="form-control rtl" name="email" id="email" placeholder="ادخل البريد الالكتورني" aria-label="البريد الالكتروني" aria-describedby="invalid-email" required)
+                    p.invalid-feedback#invalid-email
+
                   label="كلمة المرور"
                   div.mb-3
-                    input(type="password" class="form-control" placeholder="Password" aria-label="Password" aria-describedby="password-addon")
+                    input(type="password" class="form-control rtl" minlength="8" maxlength="30" name="password" id="password" placeholder="ادخل كلمة المرور" aria-label="Password" aria-describedby="invalid-password" required)
+                    p.invalid-feedback#invalid-password
                   label="نوع المستخدم"
                   .row 
                     .col
                       div.form-check
-                        input(class="form-check-input" type="radio" name="flexRadioDefault" id="customRadio1")
-                        label(class="custom-control-label" for="customRadio1")="مسوق"
+                        input(class="form-check-input" type="radio" name="role" id="role1" value="AFFILIATE" aria-describedby="invalid-role" required)
+                        label(class="custom-control-label" for="role1")="مسوق"
                     .col
                       div.form-check
-                        input(class="form-check-input" type="radio" name="flexRadioDefault" id="customRadio2")
-                        label(class="custom-control-label" for="customRadio2")="تاجر"
+                        input(class="form-check-input" type="radio" name="role" id="role2" value="VENDOR" aria-describedby="invalid-role" required)
+                        label(class="custom-control-label" for="role2")="تاجر"
+                    p.invalid-feedback#invalid-role
                   div.text-center
-                    button(type="button" class="btn bg-gradient-dark w-100 my-4 mb-2")="انشاء حساب"
+                    button(type="submit" class="btn bg-gradient-dark w-100 my-4 mb-2")="انشاء حساب"
                   p.text-sm.mt-3.mb-0="لديك حساب بالفعل؟ " 
                     a(href="/login" class="text-dark font-weight-bolder")="سجل الدخول"
+
+block append scripts
+  script.
+    $("#registerForm").submit((e)=>{
+      const data = Object.fromEntries(new FormData(e.target).entries())
+      console.log(data)
+      e.preventDefault();
+      const handleErrors = (errors)=>{
+        const errorsJson = errors.responseJSON;
+        console.error(errorsJson)
+        $(".is-invalid").removeClass("is-invalid")
+        if(errorsJson.code==="VALIDATION"){
+          for(const [input,feedback] of Object.entries(errorsJson.errors)){
+            $(`#${input}`).addClass("is-invalid")
+            $(`#invalid-${input}`).text(feedback)
+          }
+        }else{
+          addAlert("danger",errorsJson.message)
+        }
+      }
+      submitHandler("/api/auth/register","POST",(data)=>addAlert("success","تم انشاء حساب بنجاح. ستتمكن من تسجيل الدخول عند تفعيل الحساب"),handleErrors,data)
+    })
