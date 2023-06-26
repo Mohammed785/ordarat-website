@@ -14,7 +14,7 @@ block body
           div.col-xl-5.col-lg-6.col-md-8.mx-auto
             div.card.z-index-0
               div.card-body
-                form(role="form text-left" method="POST" id="registerForm")
+                form(role="form" method="POST" class="needs-validation" id="registerForm")
                   div.row
                     div.col 
                       label="الاسم الاول"
@@ -59,20 +59,6 @@ block append scripts
   script.
     $("#registerForm").submit((e)=>{
       const data = Object.fromEntries(new FormData(e.target).entries())
-      console.log(data)
       e.preventDefault();
-      const handleErrors = (errors)=>{
-        const errorsJson = errors.responseJSON;
-        console.error(errorsJson)
-        $(".is-invalid").removeClass("is-invalid")
-        if(errorsJson.code==="VALIDATION"){
-          for(const [input,feedback] of Object.entries(errorsJson.errors)){
-            $(`#${input}`).addClass("is-invalid")
-            $(`#invalid-${input}`).text(feedback)
-          }
-        }else{
-          addAlert("danger",errorsJson.message)
-        }
-      }
-      submitHandler("/api/auth/register","POST",(data)=>addAlert("success","تم انشاء حساب بنجاح. ستتمكن من تسجيل الدخول عند تفعيل الحساب"),handleErrors,data)
+      submitHandler("/api/auth/register","POST",(data)=>addAlert("success","تم انشاء حساب بنجاح. ستتمكن من تسجيل الدخول عند تفعيل الحساب"),handleRequestErrors,data)
     })

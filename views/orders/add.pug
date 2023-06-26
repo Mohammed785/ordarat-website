@@ -1,0 +1,244 @@
+extends ../layout.pug
+block content
+    include ../navbar.pug
+    div.container-fluid.py-4
+        div.row
+            div.col-12
+                div.card
+                    div.card-body
+                        div
+                            form(role="form" method="POST" id="addOrderForm" novalidate)
+                                h5.text-muted.text-center.mb-2="معلومات العميل"
+                                hr(style="border-top:1px solid!important;")
+                                div.row
+                                    div.col-lg-4.col-md-4
+                                        div.mb-3
+                                            label.ms-0="اسم العميل" 
+                                            input(type="text" class="form-control rtl" placeholder="ادخل اسم العميل" name="clientName" id="clientName" minlength="2" maxlength="50" required)
+                                            p.invalid-feedback#invalid-clientName
+                                    div.col-lg-4.col-md-4
+                                        div.mb-3
+                                            label.ms-0="رقم الهاتف" 
+                                            input(type="text" class="form-control rtl" placeholder="ادخل رقم العميل" name="clientPhone" id="clientPhone" minlength="11" maxlength="11" required)
+                                            p.invalid-feedback#invalid-clientPhone
+                                        
+                                    div.col-lg-2.col-md-2
+                                        div.mb-3
+                                            label="المحافظة" 
+                                            select(class="form-select rtl select-rtl" name="clientGov" id="clientGov" aria-describedby="invalid-clientGov" required)
+                                                option(style="display:none;")="اختار محافظة"
+                                                option(value="القاهرة")="القاهرة"
+                                                option(value="الجيزة")="الجيزة"
+                                                option(value="الاسكندرية")="الاسكندرية"
+                                            p.invalid-feedback#invalid-clientGov
+                                    div.col-lg-2.col-md-2
+                                        div.mb-3
+                                            label="المنطقة" 
+                                            select(class="form-select rtl select-rtl" name="clientCity" id="clientCity" aria-describedby="invalid-clientCity" required)
+                                                option(style="display:none;")="اختار منطقة"
+                                                option(value="الشوبك")="الشوبك"
+                                                option(value="البدرشين")="البدرشين"
+                                                option(value="العياط")="العياط"
+                                            p.invalid-feedback#invalid-clientCity
+                                div.mb-3
+                                    label="عنوان العميل"
+                                    input(type="text" placeholder="عنوان العميل" name="clientAddress" id="clientAddress" class="form-control rtl" aria-describedby="invalid-clientAddress" required)
+                                    p.invalid-feedback#invalid-clientAddress
+                                h5.text-muted.text-center.mb-2="معلومات الاوردر"
+                                hr(style="border-top:1px solid!important;")
+                                div.row.mb-2
+                                    div.col
+                                        div.mb-3
+                                            label="تكلفة الشحن" 
+                                            input(type="number" class="form-control rtl" placeholder="تكلفة الشحن" required name="shippingCost" id="shippingCost" min=0)
+                                            p.invalid-feedback#invalid-shippingCost
+                                    div.col
+                                        div.mb-3
+                                            label.ms-0="اجمالي المنتجات"
+                                            input(type="text" id="productsCost" disabled class="form-control rtl" placeholder="اجمالي المنتجات" min=0)
+                                    div.col
+                                        div.mb-3
+                                            label="اجمالي الاوردر"
+                                            input(type="text" id="orderCost" disabled class="form-control rtl" placeholder="اجمالي الاوردر" min=0)
+                            h5.text-muted.text-center.mb-2="اضافة صنف"
+                            hr(style="border-top:1px solid!important;")
+                            div.row
+                                div.col-lg-6.col-md-6
+                                    div.mb-3
+                                        label="المنتج"
+                                        select(class="form-select select-rtl" name="productCode" id="productCode" aria-describedby="invalid-productCode" aria-labeledBy="productCodeHelp")
+                                            option(style="display:none")="اختر منتج"
+                                            each product in products
+                                                option(value=product.id id=`product-${product.id}` data-name=product.name data-sellPrice=product.sellPrice data-buyPrice=product.buyPrice data-affiliatePrice=product.affiliatePrice)=`${product.name} ${product.code}`
+                                        p.invalid-feedback#invalid-productCode
+                                        
+                                div.col-lg-6.col-md-6
+                                    div.mb-3
+                                        label="اللون و المقاس"
+                                        select(class="form-select select-rtl" name="productVariant" id="productVariant" aria-describedby="invalid-productVariant")
+                                            option(style='display:none')="اختر اللون والمقاس"
+                                        p.invalid-feedback#invalid-productVariant
+                            form(method="POST" id="variantForm")
+                                div.row
+                                    div.col
+                                        div.mb-3
+                                            label="الكمية"
+                                            input(type="number" id="qty" name="qty" class="form-control rtl" min=0 aria-labeledBy="productQtyHelp" aria-describedby="invalid-qty")
+                                            p.invalid-feedback#invalid-qty
+                                            div.form-text#productQtyHelp
+                                    div.col
+                                        div.mb-3
+                                            label="التكلفة"
+                                            input(type="number" id="cost" name="cost" class="form-control rtl" min=0 aria-labeledBy="productCostHelp" aria-describedby="invalid-cost")
+                                            p.invalid-feedback#invalid-cost
+                                            div.form-text#productCostHelp
+                                    button(type="button" id="orderProductBtn" class="btn btn-info bg-gradient-info")="اضافة صنف"
+                            div.row.mt-2
+                                h5.text-muted.text-center.mb-2="الاصناف المضافة"
+                                hr(style="border-top:1px solid!important;")
+                                div.table-responsive.p-0
+                                    table.table.align-items-center.mb-0#orderItemsTable
+                                        thead
+                                            tr
+                                                th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="المنتج"
+                                                th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="اللون"
+                                                th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="المقاس"
+                                                th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="الكمية"
+                                                th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="التكلفة"
+                                                th 
+                                        tbody
+                            button(type="submit" form="addOrderForm" id="orderSubmitBtn" class="btn btn-dark bg-gradient-dark mt-4 w-100")="اضافة الاوردر"
+block append scripts
+    script.
+        let variants = [];
+        let selectedVariant = null;
+        let selectedProduct = null;
+        let items = {};
+        const listItems = ()=>{
+            const tableRows = Object.values(items).map((item)=>{
+                return `<tr id=item-${item.variant.id}>
+                <td class="align-middle text-center">${$(`#product-${item.product}`).data("name")}</td>
+                <td class="align-middle text-center">${item.variant.color}</td>
+                <td class="align-middle text-center">${item.variant.size}</td>
+                <td class="align-middle text-center">${item.qty}</td>
+                <td class="align-middle text-center">${item.cost}</td>
+                <td>
+                    <button class="btn btn-outline-danger rounded delete-btn">
+                        <i class="fa fa-trash"/>
+                    </button>
+                </td>
+            </tr>`})
+            $("#orderItemsTable").children("tbody").empty().append(tableRows);
+            $(".delete-btn").click(function(){    
+                const parent = $(this).closest("tr")
+                delete items[parent.attr("id").split("-")[1]]
+                parent.remove()                
+            })
+        }
+        const refreshCost = ()=>{
+            const productsCost = Object.values(items).reduce((total,item)=>total+item.cost,0);
+            $("#productsCost").val(productsCost)
+            $("#orderCost").val(productsCost+(parseInt($("#shippingCost"))||0))
+        }
+        $(document).ready(function(){
+            $("#productCode").on("change",function(){
+                variants=[]
+                selectedProduct=$(this).val()
+                const success = (data)=>{
+                    variants = data.variants
+                    const options = variants.map((variant)=>`<option value="${variant.id}">${variant.fullName}</option>`)
+                    $("#productVariant").val("").empty().append("<option style='display:none'>اختر اللون والمقاس</option>").append(options)
+                }
+                $("#productQtyHelp").text(``)
+                $("#productCostHelp").text(``)
+                $("#cost").val('')
+                $("#qty").val('')
+                if(!selectedProduct){
+                    showToast("يرجي اختيار منتج")
+                }else{
+                    submitHandler(`/api/product/${selectedProduct}/variants`,"GET",success,(error)=>addAlert("danger",error.responseJSON.message))
+                }
+            })
+            $("#productVariant").on("change",function(){
+                selectedVariant = variants.find((variant)=>variant.id===parseInt($(this).val()));
+                if(!selectedVariant){
+                    $(this).focus()
+                    showToast("يرجي اختيار لون ومقاس")
+                }
+                $("#qty").val('');
+                $("#productQtyHelp").text(` اقصي عدد يمكنك شراءة للمنتج هو ${selectedVariant.unitAmount}`)
+            });
+            $("#qty").on("change",function(){
+                if(parseInt($(this).val())>selectedVariant.unitAmount){
+                    $(this).val(selectedVariant.unitAmount)
+                    showToast(`يرجي العلم ان اكبر كمية متوفرة من ${$(`#product-${selectedProduct}`).data("name")} هيا ${selectedVariant.unitAmount}`)
+                }
+                const cost = parseInt($(this).val())*$(`#product-${selectedProduct}`).data("sellprice");
+                $("#cost").val(cost)
+                $("#productCostHelp").text(`اقل سعر يمكنك البيع بة هو "${cost}", يمكنك البيع بسعر اعلي`)
+            });
+            $("#cost").on("change",function(){
+                const minSellPrice = parseInt($("#qty").val())*$(`#product-${selectedProduct}`).data("sellprice");
+                if(parseInt($(this).val())<minSellPrice){
+                    $(this).val(minSellPrice)
+                    showToast(`يرجي العلم ان اقل سعر لبيع '${$("#qty").val()}' قطع من ${$(`#product-${selectedProduct}`).data("name")} هو ${minSellPrice}`)
+                }
+            })
+            $("#orderProductBtn").on("click",function(){
+                if($("#qty").val()&&!$("#cost")){
+                    const cost = parseInt($(this).val())*$(`#product-${selectedProduct}`).data("sellprice");
+                    $("#cost").val(cost)
+                }
+                if(!validateInput({productCode:{required:{message:"يرجي اختيار المنتج"}},productVariant:{required:{message:"يرجي اختيار اللون والمقاس"}},
+                    qty:{required:{message:"يرجي ادخال الكمية المطلوبة"},isNumber:{message:"الكمية يجب ان تكون رقم"}},
+                    cost:{required:{message:"يرجي ادخال السعر"},isNumber:{message:"السعر يجب ان يكون رقم"}},
+                })){
+                    return
+                }
+                if(items[selectedVariant.id]){
+                    items[selectedVariant.id].qty=parseInt($("#qty").val())
+                    items[selectedVariant.id].cost=parseInt($("#cost").val())
+                    showToast("تم تحديث الكمية والسعر")
+                }else{
+                    items[selectedVariant.id]={product:parseInt(selectedProduct),variant:selectedVariant,qty:parseInt($("#qty").val()),cost:parseInt($("#cost").val())}
+                    showToast("تم اضافة المنتج")
+                }
+                listItems()
+                refreshCost()
+            })
+            $("#shippingCost").on("change",function(){
+                $("#orderCost").val((parseInt($("#productsCost").val())||0)+(parseInt($(this).val())||0))
+            })
+            
+            $("#addOrderForm").on("submit",function(e){
+                e.preventDefault();
+                if(items.length===0){
+                    return addAlert("danger","يرجي اضافة منتجات لي الاوردر")
+                }
+                const valid = validateInput({
+                    clientName:{required:{message:"يرجي توفير اسم العميل"},length:{min:2,max:50,message:"يجب ان يكون طول اسم العميل مابين حرفين لي 50 حرف"}},
+                    clientAddress:{required:{message:"يرجي توفير عنوان العميل"}},
+                    clientGov:{required:{message:"يرجي توفير محافظة العميل",notIn:["اختار محافظة"]}},
+                    clientCity:{required:{message:"يرجي توفير مدينة العميل",notIn:["اختار منطقة"]}},
+                    clientPhone:{required:{message:"يرجي توفير هاتف العميل"},length:{min:11,max:11,message:"يرجي توفير رقم هاتف صحيح"},regex:{regex:/^01[0125][0-9]{8}$/,message:"يرجي توفير رقم هاتف صحيح"}},
+                    shippingCost:{required:{message:"يرجي توفير تكلفة الشحن"},isNumber:{message:"يجب ان تكون تكلفة الشحن رقم"}}
+                })
+                if(!valid){
+                    window.scrollTo({top: 0, behavior: "smooth"});
+                    return addAlert("danger","يرجي التاكد من كل البيانات")
+                }
+                const success= (data)=>{
+                    addAlert("success",`تم اضافة الاوردر بنجاح رقم الاوردر هو ${data.order.orderCode}`)
+                    items = {}
+                    listItems()
+                    $(`input, select`).removeClass("is-invalid is-valid");
+                    $("#addOrderForm")[0].reset()
+                    $("#variantForm")[0].reset()
+                    window.scrollTo({top: 0, behavior: "smooth"});
+                }
+                const data = {order:Object.fromEntries(new FormData(e.target).entries()),items:[]}
+                data.items = Object.values(items).map(item=>{return{...item,variant:item.variant.id}})
+                data.order.shippingCost = parseInt($("#shippingCost").val())                
+                submitHandler("/api/order","POST",success,handleRequestErrors,JSON.stringify(data),{contentType: "application/json"})
+            })
+        })

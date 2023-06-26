@@ -34,17 +34,5 @@ block append scripts
         $("#loginForm").submit((e) => {
           const data = Object.fromEntries(new FormData(e.target).entries())
           e.preventDefault();
-          const handleErrors = (errors)=>{
-            const errorsJson = errors.responseJSON;
-            $(".is-invalid").removeClass("is-invalid")
-            if(errorsJson.code==="VALIDATION"){
-              for(const [input,feedback] of Object.entries(errorsJson.errors)){
-                $(`#${input}`).addClass("is-invalid")
-                $(`#invalid-${input}`).text(feedback)
-              }
-            }else{
-              addAlert("danger",errorsJson.message)
-            }
-          }
-          submitHandler("/api/auth/login","POST",(data)=>window.location.href="/",handleErrors,data);
+          submitHandler("/api/auth/login","POST",(data)=>window.location.href="/",handleRequestErrors,data);
       })
