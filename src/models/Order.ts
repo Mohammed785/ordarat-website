@@ -42,6 +42,9 @@ export class Order extends BaseEntity {
     @Property({ nullable: true })
     clientNotes?: string;
 
+    @Property()
+    shippingCost?:number=0
+
     @Property({ nullable: true })
     deliveryNotes?: string;
 
@@ -180,12 +183,12 @@ export enum City {
 }
 
 export enum OrderState {
-    NOT_CONFIRMED = "NOT_CONFIRMED",
-    CONFIRMED = "CONFIRMED",
-    READY = "READY",
-    WAITING = "WAITING",
-    IN_DELIVERY = "IN_DELIVERY",
-    CANCELED = "CANCELED",
-    REFUSED = "REFUSED",
-    DELIVERED = "DELIVERED",
+    NOT_CONFIRMED = "غير مؤكد",
+    CONFIRMED = "مؤكد",
+    READY = "جاهز",
+    WAITING = "انتظار",
+    IN_DELIVERY = "في التوصيل",
+    CANCELED = "تم الغاءة",
+    REFUSED = "رفض الاستلام",
+    DELIVERED = "تم الاستلام",
 }

@@ -28,8 +28,8 @@ export class OrderItemDTO {
 }
 
 export class OrderDTO {
-    @Length(2, 50, {
-        message: "يجب ان توفير اسم العميل وان يكون  طولة مابين 2 لي 50 حرف",
+    @Length(2, 80, {
+        message: "يجب ان توفير اسم العميل وان يكون  طولة مابين 2 لي 80 حرف",
     })
     clientName: string;
 
@@ -48,6 +48,9 @@ export class OrderDTO {
     @IsOptional()
     @IsString()
     clientNotes: string;
+
+    @IsInt({message:"يرجي توفير تكلفة الشحن"})
+    shippingCost: number
 
 }
 
