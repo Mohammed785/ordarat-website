@@ -15,7 +15,7 @@ block content
          }else if(state==="في التوصيل"||state==="IN_DELIVERY"){
             return "bg-gradient-info text-white rounded p-1";
          }else if(state=== "تم الغاءة"||state==="CANCELED"){
-            return "bg-gradient-warning text-white rounded p-1";
+            return "bg-gradient-danger text-white rounded p-1";
          }else if(state==="رفض الاستلام"||state==="REFUSED"){
             return "bg-gradient-danger text-white rounded p-1";
          }else if(state=== "تم الاستلام"||state==="DELIVERED"){
@@ -29,10 +29,22 @@ block content
                div.card-header.pb-0
                   div.d-flex
                      h6="الاوردرات"
-                     div.me-auto
-                        button.btn.btn-success.ms-2#confirm-changes-btn="تاكيد التغيرات"
-                        button.btn.btn-info.ms-2.d-none#restore-changes-btn="استرجاع التغيرات"
-                        button.btn.btn-danger.ms-2#reset-changes-btn="الغاء التغيرات"
+                     div.me-auto.d-flex.align-items-start.justify-content-center.flex-wrap
+                        if user.role==="OPERATION"||user.role==="ADMIN"
+                           button.btn.btn-success.ms-2.d-none.action-btn.ms-1#confirm-changes-btn="تاكيد التغيرات"
+                           button.btn.btn-info.ms-2.d-none.action-btn.mx-1#restore-changes-btn="استرجاع التغيرات"
+                           button.btn.btn-danger.ms-2.d-none.action-btn.me-1#reset-changes-btn="الغاء التغيرات"
+                        if user.role!=="CALL_CENTER"
+                           select(name="stateFilter" id="stateFilter" class="form-select select-rtl m-0")
+                              option(value="*")="الكل" 
+                              option(value="غير مؤكد")="غير مؤكد"
+                              option(value="مؤكد")="مؤكد"
+                              option(value="جاهز")="جاهز"
+                              option(value="انتظار")="انتظار"
+                              option(value="في التوصيل")="في التوصيل"
+                              option(value="تم الاستلام")="تم الاستلام"
+                              option(value="رفض الاستلام")="رفض الاستلام"
+                              option(value="تم الغاءة")="تم الغاءة"
                div.card-body.px-0.pt-0.pb-2
                   div.table-responsive.p-0
                      table.table.align-items-center.mb-0
@@ -50,7 +62,10 @@ block content
                                  th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="تاكيد الاوردر"
                               if user.role==="OPERATION" || user.role==="ADMIN"
                                  th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="تغير حالة الاوردر"
-                              th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="ملاحظات العميل"
+                              if user.role!=="VENDOR"&&user.role!=="AFFILIATE"
+                                 th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="ملاحظات العميل"
+                              if user.role=="ADMIN"&&user.role=="OPERATION"
+                                 th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="ملاحظات الشحن"
                               
                         tbody
                            each order of orders
@@ -63,20 +78,25 @@ block content
                                  td.align-middle.text-center=order.clientCity
                                  td.align-middle.text-center=order.clientAddress
                                  td(class=`align-middle text-center `)
-                                    p(class=`${getStateClass(order.orderState)}`)=order.orderState
-                                 td.align-middle.text-center
-                                    if (user.role==="CALL_CENTER" || user.role==="ADMIN")&&order.orderState==="غير مؤكد"
-                                       button(type="button" class="btn btn-outline-success rounded confirm-order-btn" data-orderId=order.id)
-                                          i.fa.fa-check-square
+                                    p(class=`${getStateClass(order.orderState)} mb-0`)=order.orderState
+                                 if (user.role==="CALL_CENTER" || user.role==="ADMIN")
+                                    td.align-middle.text-center
+                                       if order.orderState==="غير مؤكد"
+                                          button(type="button" class="btn btn-outline-success rounded confirm-order-btn mb-0" data-orderId=order.id)
+                                             i.fa.fa-check-square
                                        
                                  if user.role==="OPERATION" || user.role==="ADMIN"
                                     td.align-middle.text-center
-                                       select(class="form-select form-select-sm select-rtl order-state-select" data-orderId=order.id)
-                                            option(style='display:none')="حالة الاوردر"
-                                            each state of ["جاهز","في التوصيل","تم الغاءة","رفض الاستلام","انتظار","تم الاستلام"]
-                                                if state!==order.orderState
-                                                   option(value=state)=state
-                                 td.align-middle.text-center=order.clientNotes
+                                       if ["تم الاستلام","DELIVERED","تم الغاءة","رفض الاستلام","CANCELED","REFUSED"].includes(order.orderState)
+                                          select(class="form-select form-select-sm select-rtl order-state-select" data-orderId=order.id)
+                                             option(style='display:none')="حالة الاوردر"
+                                             each state of ["جاهز","في التوصيل","تم الغاءة","رفض الاستلام","انتظار","تم الاستلام"]
+                                                   if state!==order.orderState
+                                                      option(value=state)=state
+                                 if user.role!=="VENDOR"&&user.role!=="AFFILIATE"
+                                    td.align-middle.text-center=order.clientNotes
+                                 if user.role=="ADMIN"&&user.role=="OPERATION"
+                                    td.align-middle.text-center=order.deliveryNotes
                if next!==-1
                   button(id="loadMore" class="btn btn-info bg-gradient-info" data-next=next)="اظهر المزيد"
 block append scripts
@@ -96,7 +116,8 @@ block append scripts
       $(document).ready(function(){
          confirmOrdersEvent()
          if(localStorage.hasOwnProperty("states")){
-            $("#restore-changes-btn").removeClass("d-none")
+            $("#restore-changes-btn,#reset-changes-btn").removeClass("d-none")
+
          }
       })
       
@@ -104,17 +125,23 @@ block append scripts
          const stateClass = getStateClass(order.orderState);
          let confirmButton = '';
          let stateSelect = '';
-
-         if ((user.role === 'CALL_CENTER' || user.role === 'ADMIN')&&order.orderState === 'غير مؤكد') {
-            confirmButton = `
-            <button type="button" class="btn btn-outline-success rounded confirm-order-btn" data-orderId="${order.id}">
+         let clientNotes = '';
+         let deliveryNotes = '';
+         if ((user.role === 'CALL_CENTER' || user.role === 'ADMIN')) {
+            let btn = ``
+            if(order.orderState === 'غير مؤكد'){
+               btn = `<button type="button" class="btn btn-outline-success rounded confirm-order-btn mb-0" data-orderId="${order.id}">
                <i class="fa fa-check-square"></i>
-            </button>`;
+            </button>`
+            }
+            confirmButton = `<td class="align-middle text-center">
+               ${btn}
+            </td>`;
          }
          if (user.role === 'OPERATION' || user.role === 'ADMIN') {
             const orderStates = ['جاهز','في التوصيل','تم الغاءة','رفض الاستلام','انتظار','تم الاستلام'];
 
-            stateSelect = `<select class="form-select form-select-sm select-rtl order-state-select" data-orderId="${order.id}">
+            stateSelect = `<td class="align-middle text-center"><select class="form-select form-select-sm select-rtl order-state-select" data-orderId="${order.id}">
                <option style="display:none">حالة الاوردر</option>
                ${orderStates.map(state => {
                   if (state !== order.orderState) {
@@ -122,8 +149,14 @@ block append scripts
                   }
                   return '';
                }).join('')}
-               </select>
+               </select></td>
             `;
+         }
+         if(user.role!=="VENDOR"&&user.role!=="AFFILIATE"){
+            clientNotes = `<td class="align-middle text-center">${order.clientNotes||""}</td>`
+         }
+         if(user.role==="ADMIN"&&user.role==="OPERATION"){
+            deliveryNotes = `<td class="align-middle text-center">${order.deliveryNotes||""}</td>`
          }
 
          return `
@@ -135,16 +168,18 @@ block append scripts
                <td class="align-middle text-center">${order.clientCity}</td>
                <td class="align-middle text-center">${order.clientAddress}</td>
                <td class="align-middle text-center">
-               <p class="${stateClass} p-1">${order.orderState}</p>
+               <p class="${stateClass} mb-0">${order.orderState}</p>
                </td>
-               <td class="align-middle text-center">${confirmButton}</td>
-               <td class="align-middle text-center">${stateSelect}</td>
-               <td class="align-middle text-center">${order.clientNotes||""}</td>
+               ${confirmButton}
+               ${stateSelect}
+               ${clientNotes}
+               ${deliveryNotes}
             </tr>
          `;
       }
       $("#loadMore").on("click",function(){
          const btn = $(this)
+         const state = $("#stateFilter").val()
          const success = (response)=>{
             btn.data("next",response.next)
             if(response.next===-1){
@@ -157,19 +192,22 @@ block append scripts
             $("tbody").append(orders)
             confirmOrdersEvent()
          }
-         requestHandler(`/orders?cursor=${btn.data("next")}`,"GET",success,handleRequestErrors,{},{headers:{Accept:"application/json"}})
+         requestHandler(`/orders?state=${state}&cursor=${btn.data("next")}`,"GET",success,handleRequestErrors,{},{headers:{Accept:"application/json"}})
       })
       const ordersStateChanges = {}
       $(".order-state-select").on("change",function(){
          const order = $(this)
          ordersStateChanges[order.data("orderid")] = order.val()
          localStorage.setItem("states",JSON.stringify(ordersStateChanges))
+         if($("#confirm-changes-btn,#reset-changes-btn").hasClass("d-none")){
+            $("#confirm-changes-btn,#reset-changes-btn").removeClass("d-none")
+         }
       })
       const resetChanges = ()=>{
          $(".order-state-select").prop('selectedIndex', 0);
          orderStateChanges = {};
          localStorage.removeItem("states")
-         $("#restore-changes-btn").addClass("d-none")
+         $(".action-btn").addClass("d-none")
       }
       $("#confirm-changes-btn").on("click",function(){
          const success = (response)=>{
@@ -188,7 +226,6 @@ block append scripts
                toUpdate.push({id,state})
             }
          }
-         console.log(toDelete,toUpdate)
          requestHandler(`/api/orders/state`,"PUT",success,handleRequestErrors,{orders:toUpdate})
          requestHandler(`/api/orders`,"DELETE",success,handleRequestErrors,{orders:toDelete})
          resetChanges()
@@ -203,4 +240,28 @@ block append scripts
             select.prop("selectedIndex",["جاهز","في التوصيل","تم الغاءة","رفض الاستلام","انتظار","تم الاستلام"].indexOf(state)||0)
          }
          $(this).addClass("d-none")
+         $("#reset-changes-btn").removeClass("d-none")
+         $("#confirm-changes-btn").removeClass("d-none")
+      })
+      $("#stateFilter").on("change",function(){
+         const state = $(this).val();
+         const success = (response)=>{
+            $("tbody").empty();
+            console.log(response.user)
+            const nextBtn = $("#loadMore")
+            console.log(response)
+            if(response.next===-1){
+               showToast("لا يوجد المزيد من الاوردارت")
+               !nextBtn.hasClass("d-none")&&nextBtn.addClass("d-none")
+            }else{
+               nextBtn.removeClass("d-none")
+            }
+            nextBtn.data("next",response.next);
+            const orders = response.orders.map((order)=>{
+               return renderOrderRow(order,response.user)
+            })
+            $("tbody").append(orders)
+            confirmOrdersEvent()
+         }
+         requestHandler(`/orders?state=${state}`,"GET",success,handleRequestErrors,{},{headers:{Accept:"application/json"}});
       })
