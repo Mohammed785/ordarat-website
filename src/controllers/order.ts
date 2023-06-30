@@ -4,7 +4,7 @@ import { Order, OrderState } from "../models/Order";
 import { BadRequestError, ErrorCodes, NotFoundError } from "../utils/errors";
 import { ForeignKeyConstraintViolationException, UniqueConstraintViolationException } from "@mikro-orm/core";
 import { validationMiddleware } from "../middlewares/validationMiddleware";
-import { OrderDTO, OrderItemDTO, OrderWithItemsDTO } from "../dto/order";
+import { OrderDTO, OrderItemDTO, OrderStateDTO, OrderWithItemsDTO } from "../dto/order";
 import rolesMiddleware from "../middlewares/rolesMiddleware";
 import { UserRoles } from "../models/User";
 import { EntityManager, QueryBuilder } from "@mikro-orm/sqlite";
@@ -12,7 +12,6 @@ import { Variant } from "../models/Product";
 import checkParameter from "../middlewares/checkParamter";
 
 export const orderRouter = Router()
-
 orderRouter.get("/orders/add",async(req,res)=>{
     const products = await DI.productRepository.findAll({fields:["id","code","name","buyPrice","affiliatePrice","sellPrice"],cache:true})
     return res.render("orders/add.pug",{user:req.session.user,products})
@@ -43,23 +42,36 @@ orderRouter.get("/orders",async(req,res)=>{
                 ? { $gt: parseInt(cursor as string) || 0 }
                 : { $lt: parseInt(cursor as string) || 1e7 },
     };
+    const options = {
+        limit: parseInt(page_size as string) || DEFAULT_LIMIT,
+        orderBy: { id: (order as "ASC" | "DESC") || "DESC" },
+    };
     let orders;
     if(userRole===UserRoles.VENDOR){
         const qb: QueryBuilder<Order> = (DI.em as EntityManager).createQueryBuilder(Order,"o");
         orders = qb.select(
-            ["o.id","o.orderCode","o.clientName","o.clientPhone","o.clientGov","o.clientCity","o.clientAddress","o.clientNotes"]
+            ["o.id","o.orderCode","o.orderState","o.clientName","o.clientPhone","o.clientGov","o.clientCity","o.clientAddress","o.clientNotes"]
         )
             .leftJoin("o.items", "oi")
             .leftJoin("oi.product", "p")
             .leftJoin("p.owner", "ow")
             .where(`ow.id = ${req.session.user?.id}`)
-            .andWhere(`o.id<${parseInt(cursor as string)||1e7}`)
-            .orderBy({"id":"DESC"})
+            .andWhere(`o.id ${order==="ASC"?">":"<"} ${parseInt(cursor as string)||order==="ASC"?0:1e7}`)
+            .orderBy({"id":order||"DESC"})
             .limit(parseInt(page_size as string)||DEFAULT_LIMIT)
-        if(state){
-            orders.andWhere(`o.order_state=${state}`)
+        if(state&&state!=="*"){
+            orders.andWhere(`o.order_state="${state}"`)
         }
-        orders = await orders.execute()
+        orders = await orders.cache(true).execute()
+    }else if(userRole===UserRoles.AFFILIATE){
+        orders = await DI.orderRepository.find(
+            { ...filter, affiliate: req.session.user?.id },
+            {
+                fields: [ "id", "orderCode", "orderState", "clientPhone", "clientAddress", "clientCity", "clientGov", "clientName"],
+                limit: parseInt(page_size as string) || DEFAULT_LIMIT,
+                orderBy: { id: (order as "ASC" | "DESC") || "DESC" },
+            }
+        );
     }else if(userRole===UserRoles.CALL_CENTER){
         orders = await DI.orderRepository.find(
             {
@@ -67,19 +79,23 @@ orderRouter.get("/orders",async(req,res)=>{
                 orderState: OrderState.NOT_CONFIRMED,
             },
             {
-                limit: parseInt(page_size as string) || DEFAULT_LIMIT,
-                orderBy: { id: (order as "ASC"|"DESC") },
+                cache:true,
+                fields:["id","orderCode","orderState","clientPhone","clientAddress","clientCity","clientGov","clientName","clientNotes"],
+                ...options
             }
         );
     }else{
-        if(state){
+        if (state && state !== "*") {
             filter.orderState = state;
         }
         orders = await DI.orderRepository.find(
             {
                 ...filter,
             },
-            { limit: parseInt(page_size as string)||DEFAULT_LIMIT,orderBy:{id:"DESC"} }
+            {
+                cache:true,
+                ...options
+            }
         );
     }
     const last = orders[(parseInt(page_size as string)||DEFAULT_LIMIT)-1];
@@ -153,7 +169,15 @@ orderRouter.put(
         return res.json({ order });
     }
 );
-
+orderRouter.put("/api/orders/state",rolesMiddleware([UserRoles.ADMIN,UserRoles.OPERATION]),validationMiddleware(OrderStateDTO),async(req,res)=>{
+    for(const order of req.body.orders){
+        if (order.state === OrderState.DELIVERED) {
+        } else {
+            await DI.orderRepository.nativeUpdate({ id:parseInt(order.id) }, { orderState:order.state as OrderState });
+        }
+    }
+    return res.sendStatus(200)
+})
 orderRouter.put("/api/order/:orderId/confirm",checkParameter(["orderId"]),rolesMiddleware([UserRoles.ADMIN,UserRoles.CALL_CENTER]),async(req,res)=>{
     const order = await DI.orderRepository.nativeUpdate(
         {
@@ -162,7 +186,6 @@ orderRouter.put("/api/order/:orderId/confirm",checkParameter(["orderId"]),rolesM
         },
         { confirmedBy: req.session.user!.id, orderState: OrderState.CONFIRMED }
     );
-    console.log(order,req.params.orderId)
     if(order===0){
         throw new BadRequestError("الاوردر غير موجود او تم الغائة او مؤكد بالفعل")
     }
@@ -176,36 +199,39 @@ orderRouter.put("/api/order/:orderId/delivered",checkParameter(["orderId"]),role
     return res.json({order});
 })
 
-orderRouter.delete("/api/order/:orderId",rolesMiddleware([UserRoles.ADMIN,UserRoles.OPERATION,UserRoles.CALL_CENTER]),async(req,res)=>{
+orderRouter.delete("/api/orders",rolesMiddleware([UserRoles.ADMIN,UserRoles.OPERATION,UserRoles.CALL_CENTER]),validationMiddleware(OrderStateDTO),async(req,res)=>{
     const isCallCenter = req.session.user?.role === UserRoles.CALL_CENTER;
-    const order = await DI.orderRepository.findOneOrFail(
-        {
-            id: parseInt(req.params.orderId),
-            orderState: !isCallCenter ? OrderState.NOT_CONFIRMED : {$ne:OrderState.NOT_CONFIRMED},
-        },
-        {
-            populate: ["items"],
-            failHandler(entityName, where) {
-                return new NotFoundError(
-                    "الاوردر غير موجود",
-                    ErrorCodes.ENTITY_NOT_FOUND
-                );
-            },
+    for(const o of req.body.orders){
+        const query = {id: parseInt(o.id)} as {id:number,orderState:OrderState,affiliate:number}
+        if(isCallCenter){
+            query.orderState = OrderState.NOT_CONFIRMED
+            query.affiliate = req.session.user!.id
         }
-    );
-    for(const item of order.items){
-        DI.em.assign(DI.orderItemRepository.getReference(item.id),{isCanceled:true})
-    }
-    order.orderState =
-        req.query.state === "refused" &&!isCallCenter
-            ? OrderState.REFUSED
-            : OrderState.CANCELED;
-    if(req.body.deliveryNotes&&!isCallCenter){
-        order.deliveryNotes = req.body.deliveryNotes
+        const order = await DI.orderRepository.findOne(
+            {
+                ...query
+            },
+            {
+                populate: ["items"]
+            }
+        );
+        if(!order){
+            continue;
+        }
+        for(const item of order.items){
+            DI.em.assign(DI.orderItemRepository.getReference(item.id),{isCanceled:true})
+        }
+        order.orderState = o.state === OrderState.REFUSED &&!isCallCenter
+                ? OrderState.REFUSED
+                : OrderState.CANCELED;
+        if(req.body.deliveryNotes&&!isCallCenter){
+            order.deliveryNotes = req.body.deliveryNotes
+        }
     }
     DI.em.flush()
-    return res.json({order})
+    return res.sendStatus(200)
 })
+
 
 orderRouter.post("/api/order/:orderId",checkParameter(["orderId"]),rolesMiddleware([UserRoles.ADMIN, UserRoles.AFFILIATE]),validationMiddleware(OrderItemDTO),async(req,res)=>{
     try {

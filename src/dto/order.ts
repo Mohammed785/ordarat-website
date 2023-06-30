@@ -3,6 +3,7 @@ import {
     IsEnum,
     IsInt,
     IsNumber,
+    IsNumberString,
     IsObject,
     IsOptional,
     IsPhoneNumber,
@@ -10,7 +11,7 @@ import {
     Length,
     ValidateNested,
 } from "class-validator";
-import { City, Gov } from "../models/Order";
+import { City, Gov, OrderState } from "../models/Order";
 import { Type } from "class-transformer";
 
 export class OrderItemDTO {
@@ -49,6 +50,7 @@ export class OrderDTO {
     @IsString()
     clientNotes: string;
 
+    @IsOptional()
     @IsInt({message:"يرجي توفير تكلفة الشحن"})
     shippingCost: number
 
@@ -64,4 +66,16 @@ export class OrderWithItemsDTO {
     @ValidateNested({ each: true })
     @Type(() => OrderItemDTO)
     items: OrderItemDTO[];
+}
+export class OrderStateItemDTO{
+    @IsNumberString()
+    id:number
+    @IsEnum(OrderState)
+    state:OrderState
+}
+export class OrderStateDTO {
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => OrderStateItemDTO)
+    orders: OrderStateItemDTO[];
 }
