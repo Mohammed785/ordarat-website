@@ -23,6 +23,9 @@ export class Product extends BaseEntity {
     @Property()
     affiliatePrice: number;
 
+    @Property()
+    isDeleted?:boolean=false
+    
     @OneToMany(() => Variant, "product")
     variants = new Collection<Variant>(this);
 
@@ -59,6 +62,9 @@ export class Variant extends BaseEntity {
 
     @Property()
     unitAmount:number
+    
+    @Property()
+    isDeleted?:boolean=false
 
     @ManyToOne(() => Product, { onDelete: "cascade",ref:true })
     product: Ref<Product>;

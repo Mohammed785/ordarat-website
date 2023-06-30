@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { DI } from "../server";
 import { BadRequestError, ErrorCodes, ForbiddenError, NotFoundError, StatusCodes } from "../utils/errors";
-import { isInt } from "class-validator";
 import { UserRoles } from "../models/User";
 import rolesMiddleware from "../middlewares/rolesMiddleware";
 import { validationMiddleware } from "../middlewares/validationMiddleware";
@@ -34,7 +33,10 @@ productRouter.get(
     }
 );
 
-
+productRouter.get("/api/product/:productId/variants",async(req,res)=>{
+    const variants = await DI.variantRepository.find({product:parseInt(req.params.productId)});
+    return res.json({variants})
+})
 
 productRouter.get("/api/product/me", async (req, res) => {
     const products = await DI.productRepository.find({
@@ -123,16 +125,26 @@ productRouter.delete(
     "/api/product/:productId",
     rolesMiddleware([UserRoles.ADMIN, UserRoles.VENDOR]),
     async (req, res) => {
-        const query = { id: parseInt(req.params.productId) } as {
+        const id =  parseInt(req.params.productId);
+        const query = { id } as {
             id: number;
             owner: number;
         };
         if (req.session.user?.role === UserRoles.VENDOR) {
             query.owner = req.session.user.id;
         }
-        const deleted = await DI.productRepository.nativeDelete({
-            ...query
-        });
+        const ordered = await DI.orderItemRepository.findOne({product:id});
+        let deleted = 0;
+        if(!ordered){
+            deleted = await DI.productRepository.nativeDelete({
+                ...query
+            });
+        }else{
+            deleted = await DI.productRepository.nativeUpdate({...query},{isDeleted:true})
+            if(deleted){
+                await DI.variantRepository.nativeUpdate({product:id},{isDeleted:true})
+            }
+        }
         if (deleted === 0) {
             throw new BadRequestError(
                 "لا يمكنك حذف المنتج لانة اما غير موجود او ليس ملكك"
@@ -147,16 +159,23 @@ productRouter.delete(
     "/api/variant/:variantId",
     rolesMiddleware([UserRoles.ADMIN, UserRoles.VENDOR]),
     async (req, res) => {
-        const query = { id: parseInt(req.params.variantId) } as {
+        const id = parseInt(req.params.variantId)
+        const query = { id } as {
             id: number;
             owner: number;
         };
         if (req.session.user?.role === UserRoles.VENDOR) {
             query.owner = req.session.user.id;
         }
-        const deleted = await DI.variantRepository.nativeDelete({
-            ...query
-        });
+        const ordered = await DI.orderItemRepository.findOne({variant:id})
+        let deleted = 0;
+        if(!ordered){
+            deleted = await DI.variantRepository.nativeDelete({
+                ...query
+            });
+        }else{
+            deleted = await DI.variantRepository.nativeUpdate({...query},{isDeleted:true})
+        }
         if (deleted === 0) {
             throw new BadRequestError(
                 "لا يمكنك حذف المنتج لانة اما غير موجود او ليس ملكك"
