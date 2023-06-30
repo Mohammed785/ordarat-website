@@ -15,7 +15,7 @@ Scrollbar.init(document.querySelector('#sidenav-scrollbar'), options);
  * @param {Object} data 
  * @param {Object} headers 
  */
-const submitHandler = (url,method,success,error,data={},options={})=>{
+const requestHandler = (url,method,success,error,data={},options={})=>{
     $.ajax({
         url,
         method,
@@ -25,7 +25,20 @@ const submitHandler = (url,method,success,error,data={},options={})=>{
         ...options,
     });
 }
-
+function slideAnimation(element,container){
+    $({ x: 0 }).animate(
+        { x: $(container).width() },
+        {
+            duration: 1000,
+            step: function (val) {
+                element.css("transform", `translateX(${val}px)`);
+            },
+            done: function () {
+                element.remove();
+            },
+        }
+    );
+}
 const handleRequestErrors = (errors) => {
     const errorsJson = errors.responseJSON;
     console.log(errorsJson)
@@ -116,4 +129,23 @@ const showToast = (message)=>{
     toast.children(".toast-body").text(message)
     const toastBootstrap = bootstrap.Toast.getOrCreateInstance(toast)
     toastBootstrap.show()
+}
+function getStateClass(state) {
+    if (state === "NOT_CONFIRMED" || state === "غير مؤكد") {
+        return "bg-gradient-dark text-white rounded p-1";
+    } else if (state === "مؤكد" || state === "CONFIRMED") {
+        return "bg-gradient-success text-white rounded p-1";
+    } else if (state === "جاهز" || state === "READY") {
+        return "bg-gradient-primary text-white rounded p-1";
+    } else if (state === "انتظار" || state === "WAITING") {
+        return "bg-gradient-primary text-white rounded p-1";
+    } else if (state === "في التوصيل" || state === "IN_DELIVERY") {
+        return "bg-gradient-info text-white rounded p-1";
+    } else if (state === "تم الغاءة" || state === "CANCELED") {
+        return "bg-gradient-danger text-white rounded p-1";
+    } else if (state === "رفض الاستلام" || state === "REFUSED") {
+        return "bg-gradient-danger text-white rounded p-1";
+    } else if (state === "تم الاستلام" || state === "DELIVERED") {
+        return "bg-gradient-success text-white rounded p-1";
+    }
 }
