@@ -4,7 +4,7 @@ import { Order, OrderState } from "../models/Order";
 import { BadRequestError, ErrorCodes, NotFoundError } from "../utils/errors";
 import { ForeignKeyConstraintViolationException, UniqueConstraintViolationException } from "@mikro-orm/core";
 import { validationMiddleware } from "../middlewares/validationMiddleware";
-import { OrderDTO, OrderItemDTO, OrderStateDTO, OrderWithItemsDTO } from "../dto/order";
+import { OrderDTO, OrderItemsDTO, OrderStateDTO, OrderWithItemsDTO } from "../dto/order";
 import rolesMiddleware from "../middlewares/rolesMiddleware";
 import { UserRoles } from "../models/User";
 import { EntityManager, QueryBuilder } from "@mikro-orm/sqlite";
@@ -17,8 +17,12 @@ orderRouter.get("/orders/add",async(req,res)=>{
     return res.render("orders/add.pug",{user:req.session.user,products})
 })
 
-orderRouter.get("/order/:code",async(req,res)=>{
-    const order = await DI.orderRepository.findOne({orderCode:req.params.code},{populate:req.query.items?["items"]:[]})
+orderRouter.get("/order/:code",rolesMiddleware([UserRoles.ADMIN,UserRoles.OPERATION,UserRoles.CALL_CENTER]),async(req,res)=>{
+    const populate:never[] = ["items", "items.variant","items.product"] as never[];
+    if(req.session.user!.role===UserRoles.ADMIN||req.session.user!.role===UserRoles.OPERATION){
+        populate.push(...["affiliate","confirmedBy"] as never[])
+    }
+    const order = await DI.orderRepository.findOne({orderCode:req.params.code},{populate,cache:true})
     if(req.get("Accept")==="application/json"){
         if(!order){
             throw new NotFoundError("الاوردر غير موجود",ErrorCodes.ENTITY_NOT_FOUND)
@@ -28,7 +32,9 @@ orderRouter.get("/order/:code",async(req,res)=>{
         if(!order){
             return res.redirect("/")
         }else{
-            return res.render("orders/view.pug",{order,user:req.session.user})
+            const isConfirmed = order.orderState!==OrderState.NOT_CONFIRMED
+            const products = isConfirmed?[]:await DI.productRepository.findAll({fields:["id","code","name","buyPrice","affiliatePrice","sellPrice"],cache:true})
+            return res.render("orders/view.pug",{order,products,isConfirmed,user:req.session.user})
         }
     }
 })
@@ -233,26 +239,35 @@ orderRouter.delete("/api/orders",rolesMiddleware([UserRoles.ADMIN,UserRoles.OPER
 })
 
 
-orderRouter.post("/api/order/:orderId",checkParameter(["orderId"]),rolesMiddleware([UserRoles.ADMIN, UserRoles.AFFILIATE]),validationMiddleware(OrderItemDTO),async(req,res)=>{
+orderRouter.post("/api/order/:orderId",checkParameter(["orderId"]),rolesMiddleware([UserRoles.ADMIN, UserRoles.AFFILIATE]),validationMiddleware(OrderItemsDTO),async(req,res)=>{
+    const order = await DI.orderRepository.findOneOrFail({id:parseInt(req.params.orderId)},{failHandler(entityName, where) {
+        return new NotFoundError("الاوردر غير موجود",ErrorCodes.ENTITY_NOT_FOUND)
+    }})
+    if(order.orderState!==OrderState.NOT_CONFIRMED){
+        throw new BadRequestError(`الاوردر ${order.orderState}, لا يمكن تعديل الاوردر الا اذا كان غير مؤكد`)
+    }
     try {
-        const variant = await DI.variantRepository.findOneOrFail({id:req.body.variant},
-            {populate:["product"],
-            failHandler(entityName, where) {
-                return new NotFoundError("المقاس واللون غير موجودان",ErrorCodes.ENTITY_NOT_FOUND)
-            },
-        })
-        if(variant.unitAmount<req.body.qty){
-            throw new BadRequestError(`الكمية الطلوبة اكبر من المتوفر ${variant.unitAmount}`)
+        for(const item of req.body.items){
+            const variant = await DI.variantRepository.findOneOrFail({id:item.variant},
+                {populate:["product"],
+                failHandler(entityName, where) {
+                    return new NotFoundError("المقاس واللون غير موجودان",ErrorCodes.ENTITY_NOT_FOUND)
+                },
+            })
+            if(variant.unitAmount<item.qty){
+                throw new BadRequestError(`${variant.getFullName()} ${variant.product.$.name} الكمية الطلوبة اكبر من المتوفر ${variant.unitAmount}`)
+            }
+            if(variant.product.$.sellPrice*item.qty<item.cost){
+                throw new BadRequestError(`${variant.product.$.name} لا يمكنك البيع باقل من سعر البيع`);
+            }
+            if(variant.product.id!==item.product){
+                throw new BadRequestError(`'${variant.product.$.name}' اللون و المقاس المختارين لا يخصان هذا المنتج`)            
+            }
+            const orderItem = DI.orderItemRepository.create({...item,order:req.params.orderId});
+            DI.em.persist(orderItem);
         }
-        if(variant.product.$.sellPrice*req.body.qty<req.body.cost){
-            throw new BadRequestError("لا يمكنك البيع باقل من سعر البيع")
-        }
-        if(variant.product.id!==req.body.product){
-            throw new BadRequestError(`'${req.body.product}' اللون و المقاس المختارين لا يخصان هذا المنتج`)            
-        }
-        const item = DI.orderItemRepository.create({...req.body,order:req.params.orderId});
-        await DI.em.persistAndFlush(item);
-        return res.json(item);
+        await DI.em.flush()
+        return res.sendStatus(200);
     } catch (error) {
         if(error instanceof ForeignKeyConstraintViolationException){
             throw new BadRequestError("الاوردر الذي تحاول الاضافة الية غير موجود",ErrorCodes.NOT_FOUND);
@@ -267,7 +282,7 @@ orderRouter.delete("/api/orderItem/:itemId",checkParameter(["itemId"]),rolesMidd
         isCanceled:false,
     },{failHandler(entityName, where) {
         return new NotFoundError("الطلب غير موجود",ErrorCodes.ENTITY_NOT_FOUND);
-    },});
+    }});
     const qb = (DI.em as EntityManager).createQueryBuilder(Variant);
     await qb
         .update({ unitAmount: qb.raw(`unit_amount+${item.qty}`) })

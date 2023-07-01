@@ -27,7 +27,12 @@ export class OrderItemDTO {
     @IsNumber({}, { message: "التكلفة يجب ان تكون رقم" })
     cost: number;
 }
-
+export class OrderItemsDTO{
+    @IsArray()
+    @ValidateNested({each:true})
+    @Type(()=>OrderItemDTO)
+    items:OrderItemDTO[]
+}
 export class OrderDTO {
     @Length(2, 80, {
         message: "يجب ان توفير اسم العميل وان يكون  طولة مابين 2 لي 80 حرف",
