@@ -1,0 +1,61 @@
+extends ../layout.pug
+block content 
+   include ../navbar.pug
+   div.container-fluid.py-4
+      div.row
+         div.col-12
+            div.card.mb-4
+               div.card-header.pb-0
+                  h6="المنتجات"
+               div.card-body.px-0.pt-0.pb-2
+                  div.table-responsive.p-0
+                     table.table.align-items-center.mb-0
+                        thead 
+                           tr 
+                              th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="الكود"
+                              th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="الاسم"
+                              th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="سعر البيع"
+                              th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="سعر الشراء"
+                              th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="عمولة"
+                        tbody 
+                           each product of products
+                              tr(id=product.id)
+                                 td.align-middle.text-center
+                                    a(href=`/product/${product.code}` class="link-info ")=product.code
+                                 td.align-middle.text-center=product.name
+                                 td.align-middle.text-center=product.sellPrice
+                                 td.align-middle.text-center=product.buyPrice
+                                 td.align-middle.text-center=product.affiliatePrice
+               if next!==-1
+                  button(id="loadMore" class="btn btn-info bg-gradient-info" data-next=next)="اظهر المزيد"
+block append scripts
+   script.
+      $(document).ready(function(){
+         function renderProductRow(product, user) {
+            return `
+               <tr id="${product.id}">
+                  <td class="align-middle text-center">${product.code}</td>
+                  <td class="align-middle text-center">${product.name}</td>
+                  <td class="align-middle text-center">${product.sellPrice}</td>
+                  <td class="align-middle text-center">${product.buyPrice}</td>
+                  <td class="align-middle text-center">${product.affiliatePrice}</td>
+               </tr>
+            `;
+         }
+         $("#loadMore").on("click",function(){
+            const btn = $(this)
+            const success = (response)=>{
+               btn.data("next",response.next)
+               if(response.next===-1){
+                  showToast("لا يوجد المزيد من المنتجات")
+                  $(this).addClass("d-none")
+               }
+               const products = response.products.map(product=>{
+                  return renderProductRow(product,response.user)
+               })
+               $("tbody").append(products)
+            }
+            requestHandler(`/products?cursor=${btn.data("next")}`,"GET",success,handleRequestErrors,{},{headers:{Accept:"application/json"}})
+         })
+      })
+      
