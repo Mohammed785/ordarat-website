@@ -1,4 +1,4 @@
-import { Collection, Entity, ManyToOne, OneToMany, Property, Ref, ref } from "@mikro-orm/core";
+import { Collection, Entity, ManyToOne, OneToMany, Property, Ref, Unique, ref } from "@mikro-orm/core";
 import BaseEntity from "./BaseEntity";
 import { User } from "./User";
 import { OrderItem } from "./Order";
@@ -52,6 +52,7 @@ export class Product extends BaseEntity {
 }
 
 @Entity()
+@Unique({properties:["color","size","product"]})
 export class Variant extends BaseEntity {
     
     @Property()

@@ -87,7 +87,7 @@ block content
                                                     th
                                         tbody
                                             each item of product.variants
-                                                tr(id=`variant-${item.id}`)
+                                                tr(id=`variant-${item.id}` data-key=item.color+item.size)
                                                     td.align-middle.text-center=item.color
                                                     td.align-middle.text-center=item.size
                                                     if !isOwner||!isAdmin||product.isDeleted
@@ -157,8 +157,22 @@ block append scripts
                 }
                 const data = Object.fromEntries(new FormData(e.target).entries())
                 data.unitAmount=parseInt(data.unitAmount)
+                data.size = data.size.trim()
+                data.color = data.color.trim()
+                const key = data.color+data.size
+                let exists = false;
+                $("tbody tr").each(function(idx,row){
+                    if($(row).data("key")===key){
+                        exists=true
+                        return
+                    }
+                })
+                if(exists){
+                    showToast("اللون والمقاس موجدان مسبقا")
+                    return
+                }
                 const success = (response)=>{
-                    const variant = `<tr id="variant-${response.variant.id}">
+                    const variant = `<tr id="variant-${response.variant.id}" data-key="${data.color}${data.size}">
                         <td class="align-middle text-center">${data.color}</td>
                         <td class="align-middle text-center">${data.size}</td>
                         <td class="align-middle text-center w-25">
