@@ -14,12 +14,12 @@ block content
                                     div.col-lg-4.col-md-4
                                         div.mb-3
                                             label.ms-0="اسم العميل" 
-                                            input(type="text" class="form-control rtl" placeholder="ادخل اسم العميل" name="clientName" id="clientName" minlength="2" maxlength="50" required)
+                                            input(type="text" class="form-control pe-2 rtl" placeholder="ادخل اسم العميل" name="clientName" id="clientName" minlength="2" maxlength="50" required)
                                             p.invalid-feedback#invalid-clientName
                                     div.col-lg-4.col-md-4
                                         div.mb-3
                                             label.ms-0="رقم الهاتف" 
-                                            input(type="text" class="form-control rtl" placeholder="ادخل رقم العميل" name="clientPhone" id="clientPhone" minlength="11" maxlength="11" required)
+                                            input(type="text" class="form-control pe-2 rtl" placeholder="ادخل رقم العميل" name="clientPhone" id="clientPhone" minlength="11" maxlength="11" required)
                                             p.invalid-feedback#invalid-clientPhone
                                         
                                     div.col-lg-2.col-md-2
@@ -42,24 +42,28 @@ block content
                                             p.invalid-feedback#invalid-clientCity
                                 div.mb-3
                                     label="عنوان العميل"
-                                    input(type="text" placeholder="عنوان العميل" name="clientAddress" id="clientAddress" class="form-control rtl" aria-describedby="invalid-clientAddress" required)
+                                    input(type="text" placeholder="عنوان العميل" name="clientAddress" id="clientAddress" class="form-control pe-2 rtl" aria-describedby="invalid-clientAddress" required)
                                     p.invalid-feedback#invalid-clientAddress
+                                div.mb-3
+                                    label="ملحوظات العميل"
+                                    textarea(placeholder="ملحوظات العميل" name="clientNotes" id="clientNotes" class="form-control pe-2 rtl" aria-describedby="invalid-clientNotes")
+                                    p.invalid-feedback#invalid-clientNotes
                                 h5.text-muted.text-center.mb-2="معلومات الاوردر"
                                 hr(style="border-top:1px solid!important;")
                                 div.row.mb-2
                                     div.col
                                         div.mb-3
                                             label="تكلفة الشحن" 
-                                            input(type="number" class="form-control rtl" placeholder="تكلفة الشحن" required name="shippingCost" id="shippingCost" min=0)
+                                            input(type="number" class="form-control pe-2 rtl" placeholder="تكلفة الشحن" required name="shippingCost" id="shippingCost" min=0)
                                             p.invalid-feedback#invalid-shippingCost
                                     div.col
                                         div.mb-3
                                             label.ms-0="اجمالي المنتجات"
-                                            input(type="text" id="productsCost" disabled class="form-control rtl" placeholder="اجمالي المنتجات" min=0)
+                                            input(type="text" id="productsCost" disabled class="form-control pe-2 rtl" placeholder="اجمالي المنتجات" min=0)
                                     div.col
                                         div.mb-3
                                             label="اجمالي الاوردر"
-                                            input(type="text" id="orderCost" disabled class="form-control rtl" placeholder="اجمالي الاوردر" min=0)
+                                            input(type="text" id="orderCost" disabled class="form-control pe-2 rtl" placeholder="اجمالي الاوردر" min=0)
                             h5.text-muted.text-center.mb-2="اضافة صنف"
                             hr(style="border-top:1px solid!important;")
                             div.row
@@ -78,18 +82,19 @@ block content
                                         select(class="form-select select-rtl" name="productVariant" id="productVariant" aria-describedby="invalid-productVariant")
                                             option(style='display:none')="اختر اللون والمقاس"
                                         p.invalid-feedback#invalid-productVariant
-                            form(method="POST" id="variantForm")
+                            //- i should listhen to submit event instead of btn click
+                            form(method="POST" id="variantForm") 
                                 div.row
                                     div.col
                                         div.mb-3
                                             label="الكمية"
-                                            input(type="number" id="qty" name="qty" class="form-control rtl" min=0 aria-labeledBy="productQtyHelp" aria-describedby="invalid-qty")
+                                            input(type="number" id="qty" name="qty" class="form-control pe-2 rtl" min=0 aria-labeledBy="productQtyHelp" aria-describedby="invalid-qty")
                                             p.invalid-feedback#invalid-qty
                                             div.form-text#productQtyHelp
                                     div.col
                                         div.mb-3
                                             label="التكلفة"
-                                            input(type="number" id="cost" name="cost" class="form-control rtl" min=0 aria-labeledBy="productCostHelp" aria-describedby="invalid-cost")
+                                            input(type="number" id="cost" name="cost" class="form-control pe-2 rtl" min=0 aria-labeledBy="productCostHelp" aria-describedby="invalid-cost")
                                             p.invalid-feedback#invalid-cost
                                             div.form-text#productCostHelp
                                     button(type="button" id="orderProductBtn" class="btn btn-info bg-gradient-info")="اضافة صنف"
@@ -110,37 +115,37 @@ block content
                             button(type="submit" form="addOrderForm" id="orderSubmitBtn" class="btn btn-dark bg-gradient-dark mt-4 w-100")="اضافة الاوردر"
 block append scripts
     script.
-        let variants = [];
-        let selectedVariant = null;
-        let selectedProduct = null;
-        let items = {};
-        const listItems = ()=>{
-            const tableRows = Object.values(items).map((item)=>{
-                return `<tr id=item-${item.variant.id}>
-                <td class="align-middle text-center">${$(`#product-${item.product}`).data("name")}</td>
-                <td class="align-middle text-center">${item.variant.color}</td>
-                <td class="align-middle text-center">${item.variant.size}</td>
-                <td class="align-middle text-center">${item.qty}</td>
-                <td class="align-middle text-center">${item.cost}</td>
-                <td>
-                    <button class="btn btn-outline-danger rounded delete-btn">
-                        <i class="fa fa-trash"/>
-                    </button>
-                </td>
-            </tr>`})
-            $("#orderItemsTable").children("tbody").empty().append(tableRows);
-            $(".delete-btn").click(function(){    
-                const parent = $(this).closest("tr")
-                delete items[parent.attr("id").split("-")[1]]
-                parent.remove()                
-            })
-        }
-        const refreshCost = ()=>{
-            const productsCost = Object.values(items).reduce((total,item)=>total+item.cost,0);
-            $("#productsCost").val(productsCost)
-            $("#orderCost").val(productsCost+(parseInt($("#shippingCost"))||0))
-        }
         $(document).ready(function(){
+            let variants = [];
+            let selectedVariant = null;
+            let selectedProduct = null;
+            let items = {};
+            const listItems = ()=>{
+                const tableRows = Object.values(items).map((item)=>{
+                    return `<tr id=item-${item.variant.id}>
+                    <td class="align-middle text-center">${$(`#product-${item.product}`).data("name")}</td>
+                    <td class="align-middle text-center">${item.variant.color}</td>
+                    <td class="align-middle text-center">${item.variant.size}</td>
+                    <td class="align-middle text-center">${item.qty}</td>
+                    <td class="align-middle text-center">${item.cost}</td>
+                    <td>
+                        <button class="btn btn-outline-danger rounded delete-btn m-0">
+                            <i class="fa fa-trash"/>
+                        </button>
+                    </td>
+                </tr>`})
+                $("#orderItemsTable").children("tbody").empty().append(tableRows);
+                $(".delete-btn").click(function(){    
+                    const parent = $(this).closest("tr")
+                    delete items[parent.attr("id").split("-")[1]]
+                    parent.remove()                
+                })
+            }
+            const refreshCost = ()=>{
+                const productsCost = Object.values(items).reduce((total,item)=>total+item.cost,0);
+                $("#productsCost").val(productsCost)
+                $("#orderCost").val(productsCost+(parseInt($("#shippingCost"))||0))
+            }
             $("#productCode").on("change",function(){
                 variants=[]
                 selectedProduct=$(this).val()
@@ -156,7 +161,7 @@ block append scripts
                 if(!selectedProduct){
                     showToast("يرجي اختيار منتج")
                 }else{
-                    submitHandler(`/api/product/${selectedProduct}/variants`,"GET",success,(error)=>addAlert("danger",error.responseJSON.message))
+                    requestHandler(`/api/product/${selectedProduct}/variants`,"GET",success,(error)=>addAlert("danger",error.responseJSON.message))
                 }
             })
             $("#productVariant").on("change",function(){
@@ -239,6 +244,6 @@ block append scripts
                 const data = {order:Object.fromEntries(new FormData(e.target).entries()),items:[]}
                 data.items = Object.values(items).map(item=>{return{...item,variant:item.variant.id}})
                 data.order.shippingCost = parseInt($("#shippingCost").val())                
-                submitHandler("/api/order","POST",success,handleRequestErrors,JSON.stringify(data),{contentType: "application/json"})
+                requestHandler("/api/order","POST",success,handleRequestErrors,JSON.stringify(data),{contentType: "application/json"})
             })
         })

@@ -13,13 +13,12 @@ block content
                                     div.col-lg-4.col-md-4
                                         div.mb-3
                                             label.ms-0="اسم العميل"
-                                            
-                                            input(type="text" disabled=isConfirmed class="form-control rtl" value=order.clientName placeholder="ادخل اسم العميل" name="clientName" id="clientName" minlength="2" maxlength="50" required)
+                                            input(type="text" disabled=isConfirmed class="form-control pe-2 rtl" value=order.clientName placeholder="ادخل اسم العميل" name="clientName" id="clientName" minlength="2" maxlength="50" required)
                                             p.invalid-feedback#invalid-clientName
                                     div.col-lg-4.col-md-4
                                         div.mb-3
                                             label.ms-0="رقم الهاتف" 
-                                            input(type="text" class="form-control rtl" disabled=isConfirmed value=order.clientPhone placeholder="ادخل رقم العميل" name="clientPhone" id="clientPhone" minlength="11" maxlength="11" required)
+                                            input(type="text" class="form-control pe-2 rtl" disabled=isConfirmed value=order.clientPhone placeholder="ادخل رقم العميل" name="clientPhone" id="clientPhone" minlength="11" maxlength="11" required)
                                             p.invalid-feedback#invalid-clientPhone
                                         
                                     div.col-lg-2.col-md-2
@@ -39,11 +38,11 @@ block content
                                     
                                     div.mb-3
                                         label="عنوان العميل"
-                                        input(type="text" placeholder="عنوان العميل" value=order.clientAddress disabled=isConfirmed name="clientAddress" id="clientAddress" class="form-control rtl" aria-describedby="invalid-clientAddress" required)
+                                        input(type="text" placeholder="عنوان العميل" value=order.clientAddress disabled=isConfirmed name="clientAddress" id="clientAddress" class="form-control pe-2 rtl" aria-describedby="invalid-clientAddress" required)
                                         p.invalid-feedback#invalid-clientAddress
                                     div.mb-3
                                         label="ملحوظات العميل"
-                                        input(type="text" placeholder="ملحوظات العميل" value=order.clientNotes disabled=isConfirmed name="clientNotes" id="clientNotes" class="form-control rtl" aria-describedby="invalid-clientNotes")
+                                        textarea(placeholder="ملحوظات العميل" disabled=isConfirmed name="clientNotes" id="clientNotes" class="form-control pe-2 rtl" aria-describedby="invalid-clientNotes")=order.clientNotes
                                         p.invalid-feedback#invalid-clientNotes
                                 h5.text-muted.text-center.mb-2="معلومات الاوردر"
                                 hr(style="border-top:1px solid!important;")
@@ -51,16 +50,16 @@ block content
                                     div.col
                                         div.mb-3
                                             label="تكلفة الشحن" 
-                                            input(type="number" class="form-control rtl" disabled=isConfirmed value=order.shippingCost placeholder="تكلفة الشحن" required name="shippingCost" id="shippingCost" min=0)
+                                            input(type="number" class="form-control pe-2 rtl" disabled=isConfirmed value=order.shippingCost placeholder="تكلفة الشحن" required name="shippingCost" id="shippingCost" min=0)
                                             p.invalid-feedback#invalid-shippingCost
                                     div.col
                                         div.mb-3
                                             label.ms-0="اجمالي المنتجات"
-                                            input(type="text" id="productsCost" disabled class="form-control rtl" placeholder="اجمالي المنتجات" min=0)
+                                            input(type="text" id="productsCost" disabled class="form-control pe-2 rtl" placeholder="اجمالي المنتجات" min=0)
                                     div.col
                                         div.mb-3
                                             label="اجمالي الاوردر"
-                                            input(type="text" id="orderCost" disabled class="form-control rtl" placeholder="اجمالي الاوردر" min=0)
+                                            input(type="text" id="orderCost" disabled class="form-control pe-2 rtl" placeholder="اجمالي الاوردر" min=0)
                                             
                                 if !isConfirmed
                                     button(type="submit" id="updateClientInfoBtn" class="btn btn-info w-100 d-none")="تحديث معلومات العميل"
@@ -89,13 +88,13 @@ block content
                                     div.col
                                         div.mb-3
                                             label="الكمية"
-                                            input(type="number" id="qty" name="qty" class="form-control rtl" min=0 aria-labeledBy="productQtyHelp" aria-describedby="invalid-qty")
+                                            input(type="number" id="qty" name="qty" class="form-control pe-2 rtl" min=0 aria-labeledBy="productQtyHelp" aria-describedby="invalid-qty")
                                             p.invalid-feedback#invalid-qty
                                             div.form-text#productQtyHelp
                                     div.col
                                         div.mb-3
                                             label="التكلفة"
-                                            input(type="number" id="cost" name="cost" class="form-control rtl" min=0 aria-labeledBy="productCostHelp" aria-describedby="invalid-cost")
+                                            input(type="number" id="cost" name="cost" class="form-control pe-2 rtl" min=0 aria-labeledBy="productCostHelp" aria-describedby="invalid-cost")
                                             p.invalid-feedback#invalid-cost
                                             div.form-text#productCostHelp
                                     button(type="button" id="orderProductBtn" class="btn btn-info bg-gradient-info")="اضافة صنف"
@@ -129,51 +128,51 @@ block content
 
 block append scripts
     script.
-        const orderId = $("#order").data("order")
-        let variants = [];
-        let selectedVariant = null;
-        let selectedProduct = null;
-        let items = {};
-        let oldItems = {}
-        const handleDeleteBtnClick = function(){
-            const item = $(this).closest("tr").data("item")
-            if(item){
-                const success = ()=>{
+        $(document).ready(function(){
+            const orderId = $("#order").data("order")
+            let variants = [];
+            let selectedVariant = null;
+            let selectedProduct = null;
+            let items = {};
+            let oldItems = {}
+            const handleDeleteBtnClick = function(){
+                const item = $(this).closest("tr").data("item")
+                if(item){
+                    const success = ()=>{
+                        const parent = $(this).closest("tr")
+                        delete items[parent.attr("id").split("-")[1]]
+                        parent.remove()
+                    }
+                    requestHandler(`/api/orderItem/${item}`,"DELETE",success,handleRequestErrors)
+                }else{
                     const parent = $(this).closest("tr")
                     delete items[parent.attr("id").split("-")[1]]
                     parent.remove()
                 }
-                requestHandler(`/api/orderItem/${item}`,"DELETE",success,handleRequestErrors)
-            }else{
-                const parent = $(this).closest("tr")
-                delete items[parent.attr("id").split("-")[1]]
-                parent.remove()
             }
-        }
-        const listItems = ()=>{
-            const tableRows = Object.values(items).map((item)=>{
-                return `<tr id=item-${item.variant.id} class="new">
-                <td class="align-middle text-center">${$(`#product-${item.product}`).data("name")}</td>
-                <td class="align-middle text-center">${item.variant.color}</td>
-                <td class="align-middle text-center">${item.variant.size}</td>
-                <td class="align-middle text-center">${item.qty}</td>
-                <td class="align-middle text-center">${item.cost}</td>
-                <td>
-                    <button class="btn btn-outline-danger rounded delete-btn m-0">
-                        <i class="fa fa-trash"/>
-                    </button>
-                </td>
-            </tr>`})
-            $(".new").remove()
-            $("#orderItemsTable").append(tableRows);
-            $(".delete-btn").click(handleDeleteBtnClick)
-        }
-        const refreshCost = ()=>{
-            const productsCost = Object.values(items).reduce((total,item)=>total+item.cost,0);
-            $("#productsCost").val(productsCost)
-            $("#orderCost").val(productsCost+(parseInt($("#shippingCost"))||0))
-        }
-        $(document).ready(function(){
+            const listItems = ()=>{
+                const tableRows = Object.values(items).map((item)=>{
+                    return `<tr id=item-${item.variant.id} class="new">
+                    <td class="align-middle text-center">${$(`#product-${item.product}`).data("name")}</td>
+                    <td class="align-middle text-center">${item.variant.color}</td>
+                    <td class="align-middle text-center">${item.variant.size}</td>
+                    <td class="align-middle text-center">${item.qty}</td>
+                    <td class="align-middle text-center">${item.cost}</td>
+                    <td>
+                        <button class="btn btn-outline-danger rounded delete-btn m-0">
+                            <i class="fa fa-trash"/>
+                        </button>
+                    </td>
+                </tr>`})
+                $(".new").remove()
+                $("#orderItemsTable").append(tableRows);
+                $(".delete-btn").click(handleDeleteBtnClick)
+            }
+            const refreshCost = ()=>{
+                const productsCost = Object.values(items).reduce((total,item)=>total+item.cost,0);
+                $("#productsCost").val(productsCost)
+                $("#orderCost").val(productsCost+(parseInt($("#shippingCost"))||0))
+            }
             $(".delete-btn").click(handleDeleteBtnClick)
             $("tbody tr").each(function(idx,row){
                 const variant = $(row).attr("id").split("-")[1]

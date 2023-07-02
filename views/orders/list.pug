@@ -101,167 +101,168 @@ block content
                   button(id="loadMore" class="btn btn-info bg-gradient-info" data-next=next)="اظهر المزيد"
 block append scripts
    script.
-      const confirmOrdersEvent = function(){
-         $(".confirm-order-btn").each(function(idx,btn){
-            $(btn).on("click",function(){
-               const orderId = $(btn).data("orderid");
-               const success = (response)=>{
-                  const row = $(`#${orderId}`)
-                  slideAnimation(row,"tbody")
-               }
-               requestHandler(`/api/order/${orderId}/confirm`,"PUT",success,handleRequestErrors)
-            })
-         })
-      }
       $(document).ready(function(){
+         const confirmOrdersEvent = function(){
+            $(".confirm-order-btn").each(function(idx,btn){
+               $(btn).on("click",function(){
+                  const orderId = $(btn).data("orderid");
+                  const success = (response)=>{
+                     const row = $(`#${orderId}`)
+                     slideAnimation(row,"tbody")
+                  }
+                  requestHandler(`/api/order/${orderId}/confirm`,"PUT",success,handleRequestErrors)
+               })
+            })
+         }
          confirmOrdersEvent()
          if(localStorage.hasOwnProperty("states")){
             $("#restore-changes-btn,#reset-changes-btn").removeClass("d-none")
 
          }
-      })
-      
-      function renderOrderRow(order, user) {
-         const stateClass = getStateClass(order.orderState);
-         let confirmButton = '';
-         let stateSelect = '';
-         let clientNotes = '';
-         let deliveryNotes = '';
-         if ((user.role === 'CALL_CENTER' || user.role === 'ADMIN')) {
-            let btn = ``
-            if(order.orderState === 'غير مؤكد'){
-               btn = `<button type="button" class="btn btn-outline-success rounded confirm-order-btn mb-0" data-orderId="${order.id}">
-               <i class="fa fa-check-square"></i>
-            </button>`
-            }
-            confirmButton = `<td class="align-middle text-center">
-               ${btn}
-            </td>`;
-         }
-         if (user.role === 'OPERATION' || user.role === 'ADMIN') {
-            const orderStates = ['جاهز','في التوصيل','تم الغاءة','رفض الاستلام','انتظار','تم الاستلام'];
 
-            stateSelect = `<td class="align-middle text-center"><select class="form-select form-select-sm select-rtl order-state-select" data-orderId="${order.id}">
-               <option style="display:none">حالة الاوردر</option>
-               ${orderStates.map(state => {
-                  if (state !== order.orderState) {
-                     return `<option value="${state}">${state}</option>`;
-                  }
-                  return '';
-               }).join('')}
-               </select></td>
+         function renderOrderRow(order, user) {
+            const stateClass = getStateClass(order.orderState);
+            let confirmButton = '';
+            let stateSelect = '';
+            let clientNotes = '';
+            let deliveryNotes = '';
+            if ((user.role === 'CALL_CENTER' || user.role === 'ADMIN')) {
+               let btn = ``
+               if(order.orderState === 'غير مؤكد'){
+                  btn = `<button type="button" class="btn btn-outline-success rounded confirm-order-btn mb-0" data-orderId="${order.id}">
+                  <i class="fa fa-check-square"></i>
+               </button>`
+               }
+               confirmButton = `<td class="align-middle text-center">
+                  ${btn}
+               </td>`;
+            }
+            if (user.role === 'OPERATION' || user.role === 'ADMIN') {
+               const orderStates = ['جاهز','في التوصيل','تم الغاءة','رفض الاستلام','انتظار','تم الاستلام'];
+
+               stateSelect = `<td class="align-middle text-center"><select class="form-select form-select-sm select-rtl order-state-select" data-orderId="${order.id}">
+                  <option style="display:none">حالة الاوردر</option>
+                  ${orderStates.map(state => {
+                     if (state !== order.orderState) {
+                        return `<option value="${state}">${state}</option>`;
+                     }
+                     return '';
+                  }).join('')}
+                  </select></td>
+               `;
+            }
+            if(user.role!=="VENDOR"&&user.role!=="AFFILIATE"){
+               clientNotes = `<td class="align-middle text-center">${order.clientNotes||""}</td>`
+            }
+            if(user.role==="ADMIN"&&user.role==="OPERATION"){
+               deliveryNotes = `<td class="align-middle text-center">${order.deliveryNotes||""}</td>`
+            }
+
+            return `
+               <tr id="${order.id}">
+                  <td class="align-middle text-center">${order.orderCode}</td>
+                  <td class="align-middle text-center">${order.clientName}</td>
+                  <td class="align-middle text-center">${order.clientPhone}</td>
+                  <td class="align-middle text-center">${order.clientGov}</td>
+                  <td class="align-middle text-center">${order.clientCity}</td>
+                  <td class="align-middle text-center">${order.clientAddress}</td>
+                  <td class="align-middle text-center">
+                  <p class="${stateClass} mb-0">${order.orderState}</p>
+                  </td>
+                  ${confirmButton}
+                  ${stateSelect}
+                  ${clientNotes}
+                  ${deliveryNotes}
+               </tr>
             `;
          }
-         if(user.role!=="VENDOR"&&user.role!=="AFFILIATE"){
-            clientNotes = `<td class="align-middle text-center">${order.clientNotes||""}</td>`
-         }
-         if(user.role==="ADMIN"&&user.role==="OPERATION"){
-            deliveryNotes = `<td class="align-middle text-center">${order.deliveryNotes||""}</td>`
-         }
-
-         return `
-            <tr id="${order.id}">
-               <td class="align-middle text-center">${order.orderCode}</td>
-               <td class="align-middle text-center">${order.clientName}</td>
-               <td class="align-middle text-center">${order.clientPhone}</td>
-               <td class="align-middle text-center">${order.clientGov}</td>
-               <td class="align-middle text-center">${order.clientCity}</td>
-               <td class="align-middle text-center">${order.clientAddress}</td>
-               <td class="align-middle text-center">
-               <p class="${stateClass} mb-0">${order.orderState}</p>
-               </td>
-               ${confirmButton}
-               ${stateSelect}
-               ${clientNotes}
-               ${deliveryNotes}
-            </tr>
-         `;
-      }
-      $("#loadMore").on("click",function(){
-         const btn = $(this)
-         const state = $("#stateFilter").val()
-         const success = (response)=>{
-            btn.data("next",response.next)
-            if(response.next===-1){
-               showToast("لا يوجد المزيد من الاوردارت")
-               $(this).addClass("d-none")
+         $("#loadMore").on("click",function(){
+            const btn = $(this)
+            const state = $("#stateFilter").val()
+            const success = (response)=>{
+               btn.data("next",response.next)
+               if(response.next===-1){
+                  showToast("لا يوجد المزيد من الاوردارت")
+                  $(this).addClass("d-none")
+               }
+               const orders = response.orders.map(order=>{
+                  return renderOrderRow(order,response.user)
+               })
+               $("tbody").append(orders)
+               confirmOrdersEvent()
             }
-            const orders = response.orders.map(order=>{
-               return renderOrderRow(order,response.user)
-            })
-            $("tbody").append(orders)
-            confirmOrdersEvent()
+            requestHandler(`/orders?state=${state}&cursor=${btn.data("next")}`,"GET",success,handleRequestErrors,{},{headers:{Accept:"application/json"}})
+         })
+         const ordersStateChanges = {}
+         $(".order-state-select").on("change",function(){
+            const order = $(this)
+            ordersStateChanges[order.data("orderid")] = order.val()
+            localStorage.setItem("states",JSON.stringify(ordersStateChanges))
+            if($("#confirm-changes-btn,#reset-changes-btn").hasClass("d-none")){
+               $("#confirm-changes-btn,#reset-changes-btn").removeClass("d-none")
+            }
+         })
+         const resetChanges = ()=>{
+            $(".order-state-select").prop('selectedIndex', 0);
+            orderStateChanges = {};
+            localStorage.removeItem("states")
+            $(".action-btn").addClass("d-none")
          }
-         requestHandler(`/orders?state=${state}&cursor=${btn.data("next")}`,"GET",success,handleRequestErrors,{},{headers:{Accept:"application/json"}})
-      })
-      const ordersStateChanges = {}
-      $(".order-state-select").on("change",function(){
-         const order = $(this)
-         ordersStateChanges[order.data("orderid")] = order.val()
-         localStorage.setItem("states",JSON.stringify(ordersStateChanges))
-         if($("#confirm-changes-btn,#reset-changes-btn").hasClass("d-none")){
-            $("#confirm-changes-btn,#reset-changes-btn").removeClass("d-none")
-         }
-      })
-      const resetChanges = ()=>{
-         $(".order-state-select").prop('selectedIndex', 0);
-         orderStateChanges = {};
-         localStorage.removeItem("states")
-         $(".action-btn").addClass("d-none")
-      }
-      $("#confirm-changes-btn").on("click",function(){
-         const success = (response)=>{
+         $("#confirm-changes-btn").on("click",function(){
+            const success = (response)=>{
+               for(const [id,state] of Object.entries(ordersStateChanges)){
+                  const classList = getStateClass(state)
+                  $(`#${id}`).find("td:eq(6) p").removeClass().addClass(classList).text(state)
+               }
+            }
+            const toDelete = []
+            const toUpdate = []
+
             for(const [id,state] of Object.entries(ordersStateChanges)){
-               const classList = getStateClass(state)
-               $(`#${id}`).find("td:eq(6) p").removeClass().addClass(classList).text(state)
+               if(["تم الغاءة","رفض الاستلام","REFUSED","CANCELED"].includes(state)){
+                  toDelete.push({id,state})
+               }else{
+                  toUpdate.push({id,state})
+               }
             }
-         }
-         const toDelete = []
-         const toUpdate = []
-
-         for(const [id,state] of Object.entries(ordersStateChanges)){
-            if(["تم الغاءة","رفض الاستلام","REFUSED","CANCELED"].includes(state)){
-               toDelete.push({id,state})
-            }else{
-               toUpdate.push({id,state})
+            requestHandler(`/api/orders/state`,"PUT",success,handleRequestErrors,{orders:toUpdate})
+            requestHandler(`/api/orders`,"DELETE",success,handleRequestErrors,{orders:toDelete})
+            resetChanges()
+         })
+         $("#reset-changes-btn").on("click",function(){
+            resetChanges()
+         })
+         $("#restore-changes-btn").on("click",function(){
+            const states = JSON.parse(localStorage.getItem("states"))
+            for(const [id,state] of Object.entries(states)){
+               const select = $(`#${id}`).find("select");
+               select.prop("selectedIndex",["جاهز","في التوصيل","تم الغاءة","رفض الاستلام","انتظار","تم الاستلام"].indexOf(state)||0)
             }
-         }
-         requestHandler(`/api/orders/state`,"PUT",success,handleRequestErrors,{orders:toUpdate})
-         requestHandler(`/api/orders`,"DELETE",success,handleRequestErrors,{orders:toDelete})
-         resetChanges()
-      })
-      $("#reset-changes-btn").on("click",function(){
-         resetChanges()
-      })
-      $("#restore-changes-btn").on("click",function(){
-         const states = JSON.parse(localStorage.getItem("states"))
-         for(const [id,state] of Object.entries(states)){
-            const select = $(`#${id}`).find("select");
-            select.prop("selectedIndex",["جاهز","في التوصيل","تم الغاءة","رفض الاستلام","انتظار","تم الاستلام"].indexOf(state)||0)
-         }
-         $(this).addClass("d-none")
-         $("#reset-changes-btn").removeClass("d-none")
-         $("#confirm-changes-btn").removeClass("d-none")
-      })
-      $("#stateFilter").on("change",function(){
-         const state = $(this).val();
-         const success = (response)=>{
-            $("tbody").empty();
-            console.log(response.user)
-            const nextBtn = $("#loadMore")
-            console.log(response)
-            if(response.next===-1){
-               showToast("لا يوجد المزيد من الاوردارت")
-               !nextBtn.hasClass("d-none")&&nextBtn.addClass("d-none")
-            }else{
-               nextBtn.removeClass("d-none")
+            $(this).addClass("d-none")
+            $("#reset-changes-btn").removeClass("d-none")
+            $("#confirm-changes-btn").removeClass("d-none")
+         })
+         $("#stateFilter").on("change",function(){
+            const state = $(this).val();
+            const success = (response)=>{
+               $("tbody").empty();
+               console.log(response.user)
+               const nextBtn = $("#loadMore")
+               console.log(response)
+               if(response.next===-1){
+                  showToast("لا يوجد المزيد من الاوردارت")
+                  !nextBtn.hasClass("d-none")&&nextBtn.addClass("d-none")
+               }else{
+                  nextBtn.removeClass("d-none")
+               }
+               nextBtn.data("next",response.next);
+               const orders = response.orders.map((order)=>{
+                  return renderOrderRow(order,response.user)
+               })
+               $("tbody").append(orders)
+               confirmOrdersEvent()
             }
-            nextBtn.data("next",response.next);
-            const orders = response.orders.map((order)=>{
-               return renderOrderRow(order,response.user)
-            })
-            $("tbody").append(orders)
-            confirmOrdersEvent()
-         }
-         requestHandler(`/orders?state=${state}`,"GET",success,handleRequestErrors,{},{headers:{Accept:"application/json"}});
+            requestHandler(`/orders?state=${state}`,"GET",success,handleRequestErrors,{},{headers:{Accept:"application/json"}});
+         })
       })
+      
