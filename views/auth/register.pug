@@ -14,7 +14,7 @@ block body
           div.col-xl-5.col-lg-6.col-md-8.mx-auto
             div.card.z-index-0
               div.card-body
-                form(role="form" method="POST" class="needs-validation" id="registerForm")
+                form(role="form" method="POST" class="needs-validation" novalidate id="registerForm")
                   div.row
                     div.col 
                       label="الاسم الاول"
@@ -58,7 +58,17 @@ block body
 block append scripts
   script.
     $("#registerForm").submit((e)=>{
-      const data = Object.fromEntries(new FormData(e.target).entries())
       e.preventDefault();
-      submitHandler("/api/auth/register","POST",(data)=>addAlert("success","تم انشاء حساب بنجاح. ستتمكن من تسجيل الدخول عند تفعيل الحساب"),handleRequestErrors,data)
+      const valid = validateInput({
+        firstName:{required:{message:"يرجي ادخال الاسم الاول"},length:{min:2,max:25,message:"يجب ان يكون طول الاسم الاول مابين 2 لي 25 حرف"}},
+        lastName:{required:{message:"يرجي ادخال الاسم الثاني"},length:{min:2,max:25,message:"يجب ان يكون طول الاسم الثاني مابين 2 لي 25 حرف"}},
+        email:{required:{message:"يرجي ادخال رقم الهاتف"},isEmail:{message:"يرجي ادخال بريد الكتروني صحيح"}},
+        phone:{required:{message:"يرجي ادخال رقم الهاتف"},regex:{regex:/^01[0125][0-9]{8}$/,message:"يرجي ادخال رقم هاتف صحيح"}},
+        password:{required:{message:"يرجي ادخال كلمة المرور"},length:{min:8,max:30,message:"يجب ان يكون طول كلمة المرور مابين 8 لي 30 حرف"}},
+      })
+      if(!valid){
+        return
+      }
+      const data = Object.fromEntries(new FormData(e.target).entries())
+      requestHandler("/api/auth/register","POST",(data)=>addAlert("success","تم انشاء حساب بنجاح. ستتمكن من تسجيل الدخول عند تفعيل الحساب"),handleRequestErrors,data)
     })

@@ -11,7 +11,7 @@ block body
                   h3.font-weight-bolder.text-info.text-gradient="مرحبا بعودتك"
                   p.mb-0="ادخل رقم الهاتف والبريد الالكتروني لتسجيل الدخول"
                 div.card-body
-                  form(role="form" id="loginForm" method="POST")
+                  form(role="form" id="loginForm" novalidate method="POST")
                     label="رقم الهاتف"
                     div.mb-3
                       input(type="text" name="phone" id="phone" minlength="11" maxlength="11" class="form-control rtl" placeholder="ادخل رقم الهاتف" aria-label="Email" aria-describedby="invalid-phone" required)
@@ -32,7 +32,14 @@ block body
 block append scripts
   script.
         $("#loginForm").submit((e) => {
-          const data = Object.fromEntries(new FormData(e.target).entries())
           e.preventDefault();
-          submitHandler("/api/auth/login","POST",(data)=>window.location.href="/",handleRequestErrors,data);
+          const valid = validateInput({
+            phone:{required:{message:"يرجي ادخال رقم الهاتف"},regex:{regex:/^01[0125][0-9]{8}$/,message:"يرجي ادخال رقم هاتف صحيح"}},
+            password:{required:{message:"يرجي ادخال كلمة المرور"},length:{min:8,max:30,message:"يجب ان يكون طول كلمة المرور مابين 8 لي 30 حرف"}}
+          })
+          if(!valid){
+            return
+          }
+          const data = Object.fromEntries(new FormData(e.target).entries())
+          requestHandler("/api/auth/login","POST",(data)=>window.location.href="/",handleRequestErrors,data);
       })

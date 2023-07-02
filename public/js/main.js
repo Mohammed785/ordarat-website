@@ -41,8 +41,16 @@ function slideAnimation(element,container){
 }
 const handleRequestErrors = (errors) => {
     const errorsJson = errors.responseJSON;
-    console.log(errorsJson)
-    $(".is-invalid").removeClass("is-invalid");
+    if(errorsJson.status===401){
+        window.location.href="/login"
+        return 
+    }
+    if (errorsJson.status === 403){
+        window.location.href="/"
+        return
+    }
+    console.log(errorsJson);
+    $(`input, select`).removeClass("is-invalid is-valid");
     if (errorsJson.code === "VALIDATION") {
         for (const [input, feedback] of Object.entries(errorsJson.errors)) {
             $(`#${input}`).addClass("is-invalid");
@@ -67,56 +75,60 @@ const validateInput = (toValidate) => {
         const inputVal = $(`#${input}`).val();
         let validField = true;
         $(`#${input}`).removeClass("is-invalid is-valid");
-        for (const [constraint, value] of Object.entries(validation)) {
+        for (const [constraint, schema] of Object.entries(validation)) {
             if (
                 (constraint === "required" && inputVal === "") ||
-                value?.notIn?.includes(inputVal)
+                schema?.notIn?.includes(inputVal)
             ) {
-                $(`#invalid-${input}`).text(value.message);
-                valid = false;
+                $(`#invalid-${input}`).text(schema.message);
                 validField = false;
-                continue;
+                break;
             }
             if (constraint === "length") {
                 if (
-                    inputVal.length < value.min ||
-                    inputVal.length > value.max
+                    inputVal.length < schema.min ||
+                    inputVal.length > schema.max
                 ) {
-                    $(`#invalid-${input}`).text(value.message);
-                    valid = false;
+                    $(`#invalid-${input}`).text(schema.message);
                     validField = false;
-                    continue;
+                    break;
                 }
             }
             if (constraint === "limit") {
                 if (
-                    parseInt(inputVal) < value.min ||
-                    parseInt(inputVal) > value.max
+                    parseInt(inputVal) < schema.min ||
+                    parseInt(inputVal) > schema.max
                 ) {
-                    $(`#invalid-${input}`).text(value.message);
-                    valid = false;
+                    $(`#invalid-${input}`).text(schema.message);
                     validField = false;
-                    continue;
+                    break;
                 }
             }
             if (constraint === "regex") {
-                if (!value.regex.test(inputVal)) {
-                    $(`#invalid-${input}`).text(value.message);
-                    valid = false;
+                if (!schema.regex.test(inputVal)) {
+                    $(`#invalid-${input}`).text(schema.message);
                     validField = false;
-                    continue;
+                    break;
                 }
             }
             if(constraint==="isNumber"){
-                if(!parseInt(inputVal)){
-                    $(`#invalid-${input}`).text(value.message);
-                    valid = false;
+                const val = parseInt(inputVal)
+                if(val!==0&&!val){
+                    $(`#invalid-${input}`).text(schema.message);
                     validField = false;
-                    continue;        
+                    break;        
+                }
+            }
+            if(constraint==="isEmail"){
+                if(!/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(inputVal)){
+                    $(`#invalid-${input}`).text(schema.message);
+                    validField = false;
+                    break;        
                 }
             }
         }
         if (!validField) {
+            valid = false;
             $(`#${input}`).addClass("is-invalid");
         } else {
             $(`#${input}`).addClass("is-valid");
