@@ -1,0 +1,11 @@
+main.main-content.mt-0
+    section.my-10
+        div.container
+            div.row
+                div.col-lg-6.my-auto
+                    h1.display-1.text-bolder.text-gradient.text-danger="خطأ 404"
+                    h2=error.title
+                    p.lead=error.msg
+                    a(class="btn bg-gradient-dark mt-4" href=error.linkHref)=error.linkText
+                div.col-lg-6.my-auto.position-relative
+                    img(class="w-100 position-relative" src="/img/error-404.png" alt="404-error")

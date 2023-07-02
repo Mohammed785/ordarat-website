@@ -1,93 +1,129 @@
 extends ../layout.pug
 block content
     include ../navbar.pug
-    div.container-fluid.py-4
-        div.row
-            div.col-12
-                div.card
-                    div.card-body
-                        form(id="productForm" data-product=product.id)
-                            h5.text-muted.text-center.mb-2="معلومات المنتج"
+    if !product || (product.isDeleted&&!isAdmin)
+        - var error ={title:"المنتج غير موجود",msg:"يبدو ان المنتج الذي تحاول عرضة غير موجود او تم حذفة من قبل المالك.",linkHref:"/products",linkText:"العودة لصفحة المنتجات"}
+        include ../404.pug
+    else
+        div.container-fluid.py-4
+            div.row
+                div.col-12
+                    div.card
+                        div.card-body
+
+                            form(id="productForm" data-product=product.id)
+                                h5.text-muted.text-center.mb-2="معلومات المنتج"
                                 hr(style="border-top:1px solid!important;")
                                 div.row
                                     div.col
                                         div.mb-3
                                             label.ms-0="اسم المنتج"
-                                            input(type="text" class="form-control pe-2 rtl" value=product.name placeholder="ادخل اسم المنتج" name="name" id="name" required)
+                                            input(type="text" class="form-control pe-2 rtl" disabled=product.isDeleted value=product.name placeholder="ادخل اسم المنتج" name="name" id="name" required)
                                             p.invalid-feedback#invalid-name
                                     div.col
                                         div.mb-3
                                             label.ms-0="كود المنتج" 
-                                            input(type="text" class="form-control pe-2 rtl" value=product.code placeholder="ادخل كود المنتج" name="code" id="code" maxlength="8" required)
-                                            p.invalid-feedback#invalid-code                                        
+                                            input(type="text" class="form-control pe-2 rtl" disabled=product.isDeleted value=product.code placeholder="ادخل كود المنتج" name="code" id="code" maxlength="8" required)
+                                            p.invalid-feedback#invalid-code
                                 div.row
                                     div.col
                                         div.mb-3
                                             label="سعر البيع"
-                                            input(type="number" class="form-control pe-2 rtl" value=product.sellPrice placeholder="ادخل سعر بيع المنتج" name="sellPrice" id="sellPrice" required)
+                                            input(type="number" class="form-control pe-2 rtl" disabled=product.isDeleted value=product.sellPrice placeholder="ادخل سعر بيع المنتج" name="sellPrice" id="sellPrice" required)
                                             p.invalid-feedback#invalid-sellPrice
                                     div.col
                                         div.mb-3
                                             label="سعر الشراء"
-                                            input(type="number" class="form-control pe-2 rtl" value=product.buyPrice placeholder="ادخل سعر شراء المنتج" name="buyPrice" id="buyPrice" required)
+                                            input(type="number" class="form-control pe-2 rtl" disabled=product.isDeleted value=product.buyPrice placeholder="ادخل سعر شراء المنتج" name="buyPrice" id="buyPrice" required)
                                             p.invalid-feedback#invalid-buyPrice
                                     div.col
                                         div.mb-3
                                             label="العمولة"
-                                            input(type="number" class="form-control pe-2 rtl" value=product.affiliatePrice placeholder="ادخل عمولة المنتج" name="affiliatePrice" id="affiliatePrice" required)
+                                            input(type="number" class="form-control pe-2 rtl" disabled=product.isDeleted value=product.affiliatePrice placeholder="ادخل عمولة المنتج" name="affiliatePrice" id="affiliatePrice" required)
                                             p.invalid-feedback#invalid-affiliatePrice
-                                button(type="submit" class="btn btn-info w-100")="تحديث معلومات المنتج"
-                                
-                        form(id="variantForm")
-                            h5.text-muted.text-center.mb-2="مقاسات و الوان المنتج"
-                            div.row
                                 div.col
                                     div.mb-3
-                                        label="المقاس"
-                                        input(type="text" id="size" name="size" placeholder="ادخل المقاس" class="form-control pe-2 rtl" aria-labeledBy="variantSizeHelp" aria-describedby="invalid-size")
-                                        p.invalid-feedback#invalid-size
-                                        div.form-text#variantSizeHelp
-                                div.col
-                                    div.mb-3
-                                        label="اللون"
-                                        input(type="text" id="color" name="color" class="form-control pe-2 rtl" placeholder="ادخل اللون" aria-labeledBy="variantColorHelp" aria-describedby="invalid-color")
-                                        p.invalid-feedback#invalid-color
-                                        div.form-text#variantColorHelp
-                                div.col
-                                    div.mb-3
-                                        label="الكمية"
-                                        input(type="number" id="unitAmount" name="unitAmount" class="form-control pe-2 rtl" placeholder="ادخل الكمية المتاحة" min=0 aria-labeledBy="variantUnitAmountHelp" aria-describedby="invalid-unitAmount")
-                                        p.invalid-feedback#invalid-unitAmount
-                                        div.form-text#variantUnitAmountHelp
-                            button(type="submit" class="btn btn-info bg-gradient-info w-100")="اضافة اللون والمقاس"
-                        div.row.mt-2
-                            h5.text-muted.text-center.mb-2="المقاسات والالوان"
-                            hr(style="border-top:1px solid!important;")
-                            div.table-responsive.p-0
-                                table.table.align-items-center.mb-0#productVariantsTable
-                                    thead
-                                        tr
-                                            th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="اللون"
-                                            th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="المقاس"
-                                            th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="الكمية"
-                                            th
-                                    tbody
-                                        each item of product.variants
-                                            tr(id=`variant-${item.id}`)
-                                                td.align-middle.text-center=item.color
-                                                td.align-middle.text-center=item.size
-                                                td.align-middle.text-center.w-25
-                                                    input(type="number" class="form-control rtl" id=`variant-${item.id}-unit` min=0 value=item.unitAmount)                                                
-                                                td.align-middle.text-center
-                                                    button.btn.btn-outline-danger.rounded.delete-btn.ms-1.mb-0
-                                                        i.fa.fa-trash
-                                                    button.btn.btn-outline-success.rounded.update-btn.me-1.mb-0
-                                                        i.fa.fa-edit
+                                        label.ms-0="وصف المنتج (اختياري)" 
+                                        textarea(class="form-control pe-2 rtl" placeholder="ادخل وصف المنتج" disabled=product.isDeleted name="description" id="description")=product.description 
+                                        p.invalid-feedback#invalid-description
+                                if (isOwner||isAdmin)&&!product.isDeleted
+                                        button(type="submit" class="btn btn-info w-100")="تحديث معلومات المنتج"
+                                    
+                            form(id="variantForm")
+                                h5.text-muted.text-center.mb-2="مقاسات و الوان المنتج"
+                                hr(style="border-top:1px solid!important;")
+                                div.row
+                                    div.col
+                                        div.mb-3
+                                            label="اللون"
+                                            input(type="text" id="color" name="color" disabled=!isOwner&&!isAdmin class="form-control pe-2 rtl" placeholder="ادخل اللون" aria-labeledBy="variantColorHelp" aria-describedby="invalid-color")
+                                            p.invalid-feedback#invalid-color
+                                            div.form-text#variantColorHelp
+                                    div.col
+                                        div.mb-3
+                                            label="المقاس"
+                                            input(type="text" id="size" name="size" disabled=!isOwner&&!isAdmin placeholder="ادخل المقاس" class="form-control pe-2 rtl" aria-labeledBy="variantSizeHelp" aria-describedby="invalid-size")
+                                            p.invalid-feedback#invalid-size
+                                            div.form-text#variantSizeHelp
+                                    div.col
+                                        div.mb-3
+                                            label="الكمية"
+                                            input(type="number" id="unitAmount" name="unitAmount" disabled=!isOwner&&!isAdmin class="form-control pe-2 rtl" placeholder="ادخل الكمية المتاحة" min=0 aria-labeledBy="variantUnitAmountHelp" aria-describedby="invalid-unitAmount")
+                                            p.invalid-feedback#invalid-unitAmount
+                                            div.form-text#variantUnitAmountHelp
+                                if (isOwner||isAdmin)&&!product.isDeleted
+                                    button(type="submit" class="btn btn-info bg-gradient-info w-100")="اضافة اللون والمقاس"
+                            div.row.mt-2
+                                h5.text-muted.text-center.mb-2="المقاسات والالوان"
+                                hr(style="border-top:1px solid!important;")
+                                div.table-responsive.p-0
+                                    table.table.align-items-center.mb-0#productVariantsTable
+                                        thead
+                                            tr
+                                                th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="اللون"
+                                                th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="المقاس"
+                                                th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="الكمية"
+                                                if (isOwner||isAdmin)&&!product.isDeleted
+                                                    th
+                                        tbody
+                                            each item of product.variants
+                                                tr(id=`variant-${item.id}`)
+                                                    td.align-middle.text-center=item.color
+                                                    td.align-middle.text-center=item.size
+                                                    if !isOwner||!isAdmin||product.isDeleted
+                                                        td.align-middle.text-center=item.unitAmount
+                                                    else
+                                                        td.align-middle.text-center.w-25
+                                                            input(type="number" class="form-control rtl" id=`variant-${item.id}-unit` min=0 value=item.unitAmount)
+                                                    if (isOwner||isAdmin)&&!product.isDeleted
+                                                        td.align-middle.text-center
+                                                            button.btn.btn-outline-danger.rounded.delete-btn.ms-1.mb-0
+                                                                i.fa.fa-trash
+                                                            button.btn.btn-outline-success.rounded.update-btn.me-1.mb-0
+                                                                i.fa.fa-edit
+                        if (isOwner||isAdmin)&&!product.isDeleted
+                            div(class="modal fade" id="modal-notification" tabindex="-1" role="dialog" aria-labelledby="modal-notification" aria-hidden="true")
+                                div(class="modal-dialog modal-danger modal-dialog-centered modal-" role="document")
+                                    div.modal-content
+                                        div.modal-header
+                                            h6.modal-title="تحذير"
+                                            button(type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close")
+                                            span(aria-hidden="true")="×"
+                                        div.modal-body
+                                            div.py-3.text-center
+                                            i.fa.fa-exclamation-triangle.fa-lg
+                                            h4.text-gradient.text-danger.mt-4="هل انت متاكد انك تريد حذف هذا المنتج"
+                                            p="تنوية: عند حذف المنتج المنتج لن يظهر لاحد ولن يسطيع احد اضافتة لاي طلبات جديدة."
+                                        div.modal-footer
+                                            button(type="button" class="btn btn-danger" id="deleteProductBtn")="احذف المنتج"
+                                            button(type="button" class="btn btn-white text-primary ml-auto" data-bs-dismiss="modal")="الغاء"
+                                        
+                            button(class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#modal-notification")="حذف المنتج"
 
 block append scripts
     script.
         $(document).ready(function(){
-            const orderId = $("#productForm").data("product")
+            const productId = $("#productForm").data("product")
             $("#productForm").on("submit",function(e){
                 e.preventDefault()
                 const valid = validateInput({
@@ -107,7 +143,7 @@ block append scripts
                 data.sellPrice=parseInt(data.sellPrice)
                 data.buyPrice=parseInt(data.buyPrice)
                 data.affiliatePrice=parseInt(data.affiliatePrice)
-                requestHandler(`/api/product/${orderId}`,"PUT",success,handleRequestErrors,JSON.stringify(data),{contentType:"application/json"})
+                requestHandler(`/api/product/${productId}`,"PUT",success,handleRequestErrors,JSON.stringify(data),{contentType:"application/json"})
             })
             $("#variantForm").on("submit",function(e){
                 e.preventDefault()
@@ -142,7 +178,7 @@ block append scripts
                     $(".delete-btn").click(handleDeleteBtn)
                     addAlert("success","تم اضافة اللون و المقاس بنجاح")
                 }
-                requestHandler(`/api/product/${orderId}`,"POST",success,handleRequestErrors,JSON.stringify(data),{contentType:"application/json"})
+                requestHandler(`/api/product/${productId}`,"POST",success,handleRequestErrors,JSON.stringify(data),{contentType:"application/json"})
             })
             const handleDeleteBtn = function(){
                 const id = $(this).closest("tr").attr("id").split("-")[1]
@@ -167,5 +203,11 @@ block append scripts
                 requestHandler(`/api/variant/${id}`,"PUT",()=>{showToast("تم التحديث بنجاح")},handleRequestErrors,JSON.stringify({unitAmount}),{contentType:"application/json"})
             }
             $(".update-btn").click(handleUpdateBtn)
-
+            $("#deleteProductBtn").click(function(){
+                const success = (response)=>{
+                    window.location.href="/products"
+                    addAlert("success","تم حذف المنتج بنجاح")
+                }
+                requestHandler(`api/product/${productId}`,"DELETE",success,handleRequestErrors)
+            })
         })
