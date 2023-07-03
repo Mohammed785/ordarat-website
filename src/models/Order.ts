@@ -128,6 +128,9 @@ export class ShippingCompany extends BaseEntity {
 
     @OneToMany(() => Order, "shippedBy")
     orders = new Collection<Order>(this);
+
+    @Property()
+    isDeleted?: boolean = false;
 }
 
 export class OrderItemSubscriber implements EventSubscriber<OrderItem> {
