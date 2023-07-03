@@ -1,129 +1,148 @@
 extends ../layout.pug
 block content
     include ../navbar.pug
-    div.container-fluid.py-4
-        div.row
-            div.col-12
-                div.card
-                    div.card-body
-                        form(id="order" data-order=order.id)
-                            h5.text-muted.text-center.mb-2="معلومات العميل"
-                                hr(style="border-top:1px solid!important;")
-                                div.row
-                                    div.col-lg-4.col-md-4
-                                        div.mb-3
-                                            label.ms-0="اسم العميل"
-                                            input(type="text" disabled=isConfirmed class="form-control pe-2 rtl" value=order.clientName placeholder="ادخل اسم العميل" name="clientName" id="clientName" minlength="2" maxlength="50" required)
-                                            p.invalid-feedback#invalid-clientName
-                                    div.col-lg-4.col-md-4
-                                        div.mb-3
-                                            label.ms-0="رقم الهاتف" 
-                                            input(type="text" class="form-control pe-2 rtl" disabled=isConfirmed value=order.clientPhone placeholder="ادخل رقم العميل" name="clientPhone" id="clientPhone" minlength="11" maxlength="11" required)
-                                            p.invalid-feedback#invalid-clientPhone
-                                        
-                                    div.col-lg-2.col-md-2
-                                        div.mb-3
-                                            label="المحافظة" 
-                                            select(class="form-select rtl select-rtl" name="clientGov" disabled=isConfirmed value=order.clientGov  id="clientGov" aria-describedby="invalid-clientGov" required)
-                                                each gov of ["القاهرة","الجيزة","الاسكندرية"]
-                                                    option(value=gov selected=gov===order.clientGov)=gov
-                                            p.invalid-feedback#invalid-clientGov
-                                    div.col-lg-2.col-md-2
-                                        div.mb-3
-                                            label="المنطقة" 
-                                            select(class="form-select rtl select-rtl" value=order.clientCity disabled=isConfirmed name="clientCity" id="clientCity" aria-describedby="invalid-clientCity" required)
-                                                each city of ["الشوبك","البدرشين","العياط"]
-                                                    option(value=city selected=city===order.clientCity)=city
-                                            p.invalid-feedback#invalid-clientCity
-                                    
-                                    div.mb-3
-                                        label="عنوان العميل"
-                                        input(type="text" placeholder="عنوان العميل" value=order.clientAddress disabled=isConfirmed name="clientAddress" id="clientAddress" class="form-control pe-2 rtl" aria-describedby="invalid-clientAddress" required)
-                                        p.invalid-feedback#invalid-clientAddress
-                                    div.mb-3
-                                        label="ملحوظات العميل"
-                                        textarea(placeholder="ملحوظات العميل" disabled=isConfirmed name="clientNotes" id="clientNotes" class="form-control pe-2 rtl" aria-describedby="invalid-clientNotes")=order.clientNotes
-                                        p.invalid-feedback#invalid-clientNotes
-                                h5.text-muted.text-center.mb-2="معلومات الاوردر"
-                                hr(style="border-top:1px solid!important;")
-                                div.row.mb-2
-                                    div.col
-                                        div.mb-3
-                                            label="تكلفة الشحن" 
-                                            input(type="number" class="form-control pe-2 rtl" disabled=isConfirmed value=order.shippingCost placeholder="تكلفة الشحن" required name="shippingCost" id="shippingCost" min=0)
-                                            p.invalid-feedback#invalid-shippingCost
-                                    div.col
-                                        div.mb-3
-                                            label.ms-0="اجمالي المنتجات"
-                                            input(type="text" id="productsCost" disabled class="form-control pe-2 rtl" placeholder="اجمالي المنتجات" min=0)
-                                    div.col
-                                        div.mb-3
-                                            label="اجمالي الاوردر"
-                                            input(type="text" id="orderCost" disabled class="form-control pe-2 rtl" placeholder="اجمالي الاوردر" min=0)
+    if !order
+        - var error ={title:"الاوردر غير موجود",msg:"يبدو ان الاوردر الذي تحاول عرضة غير موجود.",linkHref:"/orders",linkText:"العودة لصفحة الاوردرات"}
+        include ../404.pug
+    else
+        div.container-fluid.py-4
+            div.row
+                div.col-12
+                    div.card
+                        div.card-body
+                            form(id="order" data-order=order.id)
+                                h5.text-muted.text-center.mb-2="معلومات العميل"
+                                    hr(style="border-top:1px solid!important;")
+                                    div.row
+                                        div.col-lg-4.col-md-4
+                                            div.mb-3
+                                                label.ms-0="اسم العميل"
+                                                input(type="text" disabled=isConfirmed class="form-control pe-2 rtl" value=order.clientName placeholder="ادخل اسم العميل" name="clientName" id="clientName" minlength="2" maxlength="50" required)
+                                                p.invalid-feedback#invalid-clientName
+                                        div.col-lg-4.col-md-4
+                                            div.mb-3
+                                                label.ms-0="رقم الهاتف" 
+                                                input(type="text" class="form-control pe-2 rtl" disabled=isConfirmed value=order.clientPhone placeholder="ادخل رقم العميل" name="clientPhone" id="clientPhone" minlength="11" maxlength="11" required)
+                                                p.invalid-feedback#invalid-clientPhone
                                             
-                                if !isConfirmed
-                                    button(type="submit" id="updateClientInfoBtn" class="btn btn-info w-100 d-none")="تحديث معلومات العميل"
-                                
-                        if !isConfirmed
-                            h5.text-muted.text-center.mb-2="اضافة صنف"
-                            hr(style="border-top:1px solid!important;")
-                            div.row
-                                div.col-lg-6.col-md-6
-                                    div.mb-3
-                                        label="المنتج"
-                                        select(class="form-select select-rtl" name="productCode" id="productCode" aria-describedby="invalid-productCode" aria-labeledBy="productCodeHelp")
-                                            option(style="display:none")="اختر منتج"
-                                            each product in products
-                                                option(value=product.id id=`product-${product.id}` data-name=product.name data-sellPrice=product.sellPrice data-buyPrice=product.buyPrice data-affiliatePrice=product.affiliatePrice)=`${product.name} ${product.code}`
-                                        p.invalid-feedback#invalid-productCode
+                                        div.col-lg-2.col-md-2
+                                            div.mb-3
+                                                label="المحافظة" 
+                                                select(class="form-select rtl select-rtl" name="clientGov" disabled=isConfirmed value=order.clientGov  id="clientGov" aria-describedby="invalid-clientGov" required)
+                                                    each gov of ["القاهرة","الجيزة","الاسكندرية"]
+                                                        option(value=gov selected=gov===order.clientGov)=gov
+                                                p.invalid-feedback#invalid-clientGov
+                                        div.col-lg-2.col-md-2
+                                            div.mb-3
+                                                label="المنطقة" 
+                                                select(class="form-select rtl select-rtl" value=order.clientCity disabled=isConfirmed name="clientCity" id="clientCity" aria-describedby="invalid-clientCity" required)
+                                                    each city of ["الشوبك","البدرشين","العياط"]
+                                                        option(value=city selected=city===order.clientCity)=city
+                                                p.invalid-feedback#invalid-clientCity
                                         
-                                div.col-lg-6.col-md-6
-                                    div.mb-3
-                                        label="اللون و المقاس"
-                                        select(class="form-select select-rtl" name="productVariant" id="productVariant" aria-describedby="invalid-productVariant")
-                                            option(style='display:none')="اختر اللون والمقاس"
-                                        p.invalid-feedback#invalid-productVariant
-                            form(id="variantForm")
+                                        div.mb-3
+                                            label="عنوان العميل"
+                                            input(type="text" placeholder="عنوان العميل" value=order.clientAddress disabled=isConfirmed name="clientAddress" id="clientAddress" class="form-control pe-2 rtl" aria-describedby="invalid-clientAddress" required)
+                                            p.invalid-feedback#invalid-clientAddress
+                                        div.mb-3
+                                            label="ملحوظات العميل"
+                                            textarea(placeholder="ملحوظات العميل" disabled=isConfirmed name="clientNotes" id="clientNotes" class="form-control pe-2 rtl" aria-describedby="invalid-clientNotes")=order.clientNotes
+                                            p.invalid-feedback#invalid-clientNotes
+                                    h5.text-muted.text-center.mb-2="معلومات الاوردر"
+                                    hr(style="border-top:1px solid!important;")
+                                    div.row.mb-2
+                                        div.col
+                                            div.mb-3
+                                                label="تكلفة الشحن" 
+                                                input(type="number" class="form-control pe-2 rtl" disabled=isConfirmed value=order.shippingCost placeholder="تكلفة الشحن" required name="shippingCost" id="shippingCost" min=0)
+                                                p.invalid-feedback#invalid-shippingCost
+                                        div.col
+                                            div.mb-3
+                                                label.ms-0="اجمالي المنتجات"
+                                                input(type="text" id="productsCost" disabled class="form-control pe-2 rtl" placeholder="اجمالي المنتجات" min=0)
+                                        div.col
+                                            div.mb-3
+                                                label="اجمالي الاوردر"
+                                                input(type="text" id="orderCost" disabled class="form-control pe-2 rtl" placeholder="اجمالي الاوردر" min=0)
+                                    if user.role==="ADMIN"||user.role==="OPERATION"
+                                        div.row.mb-2
+                                            div.col
+                                                div.mb-3
+                                                    label="شركة الشحن"
+                                                    select(name="shippedBy" id="shippedBy" disabled=isConfirmed class="form-select rtl select-rtl")
+                                                        each comp of companies
+                                                            option(value=comp.id selected=order.shippedBy.id===comp.id)=comp.name
+                                                        
+                                            div.col
+                                                div.mb-3
+                                                    label="حالة الاوردر"
+                                                    select(name="orderState" id="orderState" class="form-select rtl select-rtl") 
+                                                        each state of ["جاهز","في التوصيل","تم الغاءة","رفض الاستلام","انتظار","تم الاستلام","مؤكد","غير مؤكد"]
+                                                            option(value=state selected=state===order.orderState)=state
+                                    
+                                    if !isConfirmed
+                                        button(type="submit" id="updateClientInfoBtn" class="btn btn-info w-100 d-none")="تحديث معلومات العميل"
+                                    
+                            if !isConfirmed
+                                h5.text-muted.text-center.mb-2="اضافة صنف"
+                                hr(style="border-top:1px solid!important;")
                                 div.row
-                                    div.col
+                                    div.col-lg-6.col-md-6
                                         div.mb-3
-                                            label="الكمية"
-                                            input(type="number" id="qty" name="qty" class="form-control pe-2 rtl" min=0 aria-labeledBy="productQtyHelp" aria-describedby="invalid-qty")
-                                            p.invalid-feedback#invalid-qty
-                                            div.form-text#productQtyHelp
-                                    div.col
+                                            label="المنتج"
+                                            select(class="form-select select-rtl" name="productCode" id="productCode" aria-describedby="invalid-productCode" aria-labeledBy="productCodeHelp")
+                                                option(style="display:none")="اختر منتج"
+                                                each product in products
+                                                    option(value=product.id id=`product-${product.id}` data-name=product.name data-sellPrice=product.sellPrice data-buyPrice=product.buyPrice data-affiliatePrice=product.affiliatePrice)=`${product.name} ${product.code}`
+                                            p.invalid-feedback#invalid-productCode
+                                            
+                                    div.col-lg-6.col-md-6
                                         div.mb-3
-                                            label="التكلفة"
-                                            input(type="number" id="cost" name="cost" class="form-control pe-2 rtl" min=0 aria-labeledBy="productCostHelp" aria-describedby="invalid-cost")
-                                            p.invalid-feedback#invalid-cost
-                                            div.form-text#productCostHelp
-                                    button(type="button" id="orderProductBtn" class="btn btn-info bg-gradient-info")="اضافة صنف"
-                        div.row.mt-2
-                            h5.text-muted.text-center.mb-2="الاصناف المضافة"
-                            hr(style="border-top:1px solid!important;")
-                            div.table-responsive.p-0
-                                table.table.align-items-center.mb-0#orderItemsTable
-                                    thead
-                                        tr
-                                            th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="المنتج"
-                                            th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="اللون"
-                                            th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="المقاس"
-                                            th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="الكمية"
-                                            th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="التكلفة"
-                                            th
-                                    tbody
-                                        each item of order.items
-                                            tr(id=`item-${item.variant.id}` class="old" data-item=item.id data-productId=item.product.id data-cost=item.cost data-qty=item.qty)
-                                                //- for some reason item.product.name don't work
-                                                td.align-middle.text-center=Object.values(item.product)[0].name
-                                                td.align-middle.text-center=Object.values(item.variant)[0].color
-                                                td.align-middle.text-center=Object.values(item.variant)[0].size
-                                                td.align-middle.text-center=item.qty
-                                                td.align-middle.text-center=item.cost
-                                                td
-                                                    button.btn.btn-outline-danger.rounded.delete-btn.m-0
-                                                        i.fa.fa-trash
-                        button(id="orderItemsBtn" class="btn btn-dark bg-gradient-dark mt-4 w-100 d-none")="اضافة المنتجات للاوردر"
+                                            label="اللون و المقاس"
+                                            select(class="form-select select-rtl" name="productVariant" id="productVariant" aria-describedby="invalid-productVariant")
+                                                option(style='display:none')="اختر اللون والمقاس"
+                                            p.invalid-feedback#invalid-productVariant
+                                form(id="variantForm")
+                                    div.row
+                                        div.col
+                                            div.mb-3
+                                                label="الكمية"
+                                                input(type="number" id="qty" name="qty" class="form-control pe-2 rtl" min=0 aria-labeledBy="productQtyHelp" aria-describedby="invalid-qty")
+                                                p.invalid-feedback#invalid-qty
+                                                div.form-text#productQtyHelp
+                                        div.col
+                                            div.mb-3
+                                                label="التكلفة"
+                                                input(type="number" id="cost" name="cost" class="form-control pe-2 rtl" min=0 aria-labeledBy="productCostHelp" aria-describedby="invalid-cost")
+                                                p.invalid-feedback#invalid-cost
+                                                div.form-text#productCostHelp
+                                        button(type="button" id="orderProductBtn" class="btn btn-info bg-gradient-info")="اضافة صنف"
+                            div.row.mt-2
+                                h5.text-muted.text-center.mb-2="الاصناف المضافة"
+                                hr(style="border-top:1px solid!important;")
+                                div.table-responsive.p-0
+                                    table.table.align-items-center.mb-0#orderItemsTable
+                                        thead
+                                            tr
+                                                th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="المنتج"
+                                                th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="اللون"
+                                                th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="المقاس"
+                                                th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="الكمية"
+                                                th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="التكلفة"
+                                                th
+                                        tbody
+                                            each item of order.items
+                                                tr(id=`item-${item.variant.id}` class="old" data-item=item.id data-productId=item.product.id data-cost=item.cost data-qty=item.qty)
+                                                    //- for some reason item.product.name don't work
+                                                    td.align-middle.text-center=Object.values(item.product)[0].name
+                                                    td.align-middle.text-center=Object.values(item.variant)[0].color
+                                                    td.align-middle.text-center=Object.values(item.variant)[0].size
+                                                    td.align-middle.text-center=item.qty
+                                                    td.align-middle.text-center=item.cost
+                                                    td
+                                                        button.btn.btn-outline-danger.rounded.delete-btn.m-0
+                                                            i.fa.fa-trash
+                            button(id="orderItemsBtn" class="btn btn-dark bg-gradient-dark mt-4 w-100 d-none")="اضافة المنتجات للاوردر"
 
 
 block append scripts
@@ -134,7 +153,8 @@ block append scripts
             let selectedVariant = null;
             let selectedProduct = null;
             let items = {};
-            let oldItems = {}
+            let oldItems = {};
+            
             const handleDeleteBtnClick = function(){
                 const item = $(this).closest("tr").data("item")
                 if(item){

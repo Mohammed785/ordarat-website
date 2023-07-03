@@ -1,0 +1,5 @@
+extends layout.pug
+block content 
+    include navbar.pug
+    -var error={title:"غير موجود",msg:"يبدو ان الرابط غير موجد يرجي التاكد من الرابط",linkHref:"/",linkText:"العودة للرئيسية"}
+    include 404.pug
