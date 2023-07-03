@@ -4,21 +4,21 @@ block content
    include ../navbar.pug
    -
       function getStateClass(state) {
-         if(state==="NOT_CONFIRMED"||state==="غير مؤكد"){
+         if(state==="غير مؤكد"){
             return "bg-gradient-dark text-white rounded p-1"
-         }else if(state==="مؤكد"||state==="CONFIRMED"){
+         }else if(state==="مؤكد"){
             return "bg-gradient-secondary text-white rounded p-1";
-         }else if(state==="جاهز"||state==="READY"){
+         }else if(state==="جاهز"){
             return "bg-gradient-primary text-white rounded p-1";
-         }else if( state==="انتظار"||state==="WAITING"){
+         }else if( state==="انتظار"){
             return "bg-gradient-primary text-white rounded p-1";
-         }else if(state==="في التوصيل"||state==="IN_DELIVERY"){
+         }else if(state==="في التوصيل"){
             return "bg-gradient-info text-white rounded p-1";
-         }else if(state=== "تم الغاءة"||state==="CANCELED"){
+         }else if(state=== "تم الغاءة"){
             return "bg-gradient-danger text-white rounded p-1";
-         }else if(state==="رفض الاستلام"||state==="REFUSED"){
+         }else if(state==="رفض الاستلام"){
             return "bg-gradient-danger text-white rounded p-1";
-         }else if(state=== "تم الاستلام"||state==="DELIVERED"){
+         }else if(state=== "تم الاستلام"){
             return "bg-gradient-success text-white rounded p-1";
          }
       }
@@ -49,8 +49,7 @@ block content
                   div.table-responsive.p-0
                      table.table.align-items-center.mb-0
                         thead 
-                           tr 
-                              //- th 
+                           tr
                               th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="الكود"
                               th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="اسم العميل"
                               th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="رقم العميل"
@@ -70,8 +69,8 @@ block content
                         tbody
                            each order of orders
                               tr(id=order.id)
-                                 //- td input#(type="checkbox", name="")
-                                 td.align-middle.text-center=order.orderCode
+                                 td.align-middle.text-center
+                                    a(href=`/order/${order.orderCode}` class="link-info")=order.orderCode
                                  td.align-middle.text-center=order.clientName
                                  td.align-middle.text-center=order.clientPhone
                                  td.align-middle.text-center=order.clientGov
@@ -87,7 +86,7 @@ block content
                                        
                                  if user.role==="OPERATION" || user.role==="ADMIN"
                                     td.align-middle.text-center
-                                       if ["تم الاستلام","DELIVERED","تم الغاءة","رفض الاستلام","CANCELED","REFUSED"].includes(order.orderState)
+                                       if !["تم الاستلام","DELIVERED","تم الغاءة","رفض الاستلام","CANCELED","REFUSED"].includes(order.orderState)
                                           select(class="form-select form-select-sm select-rtl order-state-select" data-orderId=order.id)
                                              option(style='display:none')="حالة الاوردر"
                                              each state of ["جاهز","في التوصيل","تم الغاءة","رفض الاستلام","انتظار","تم الاستلام"]
@@ -114,6 +113,17 @@ block append scripts
                })
             })
          }
+         const orderStateSelectEvent = function(){
+            $(".order-state-select").on("change",function(){
+               const order = $(this)
+               ordersStateChanges[order.data("orderid")] = order.val()
+               localStorage.setItem("states",JSON.stringify(ordersStateChanges))
+               if($("#confirm-changes-btn,#reset-changes-btn").hasClass("d-none")){
+                  $("#confirm-changes-btn,#reset-changes-btn").removeClass("d-none")
+               }
+            })
+         }
+         orderStateSelectEvent()
          confirmOrdersEvent()
          if(localStorage.hasOwnProperty("states")){
             $("#restore-changes-btn,#reset-changes-btn").removeClass("d-none")
@@ -160,7 +170,9 @@ block append scripts
 
             return `
                <tr id="${order.id}">
-                  <td class="align-middle text-center">${order.orderCode}</td>
+                  <td class="align-middle text-center">
+                    <a href="/order/${order.orderCode}" class="link-info">${order.orderCode}</a>
+                  </td>
                   <td class="align-middle text-center">${order.clientName}</td>
                   <td class="align-middle text-center">${order.clientPhone}</td>
                   <td class="align-middle text-center">${order.clientGov}</td>
@@ -190,21 +202,14 @@ block append scripts
                })
                $("tbody").append(orders)
                confirmOrdersEvent()
+               orderStateSelectEvent()
             }
             requestHandler(`/orders?state=${state}&cursor=${btn.data("next")}`,"GET",success,handleRequestErrors,{},{headers:{Accept:"application/json"}})
          })
-         const ordersStateChanges = {}
-         $(".order-state-select").on("change",function(){
-            const order = $(this)
-            ordersStateChanges[order.data("orderid")] = order.val()
-            localStorage.setItem("states",JSON.stringify(ordersStateChanges))
-            if($("#confirm-changes-btn,#reset-changes-btn").hasClass("d-none")){
-               $("#confirm-changes-btn,#reset-changes-btn").removeClass("d-none")
-            }
-         })
+         let ordersStateChanges = {}
          const resetChanges = ()=>{
             $(".order-state-select").prop('selectedIndex', 0);
-            orderStateChanges = {};
+            ordersStateChanges = {};
             localStorage.removeItem("states")
             $(".action-btn").addClass("d-none")
          }

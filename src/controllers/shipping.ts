@@ -13,9 +13,8 @@ shippingRouter.get(
         UserRoles.CALL_CENTER,
     ]),
     async (req, res) => {
-        const isAdmin = req.session.user!.role === UserRoles.ADMIN;
         const companies = await DI.shippingRepository.find(
-            { isDeleted: isAdmin ? undefined : false },
+            { isDeleted: false },
             { cache: true, fields: ["id", "name", "isDeleted"] }
         );
         if (req.get("Accept") === "application/json") {

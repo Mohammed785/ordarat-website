@@ -59,6 +59,9 @@ export class OrderDTO {
     @IsInt({message:"يرجي توفير تكلفة الشحن"})
     shippingCost: number
 
+    @IsOptional()
+    @IsEnum(OrderState)
+    orderState:OrderState
 }
 
 export class OrderWithItemsDTO {

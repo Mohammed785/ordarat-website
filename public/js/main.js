@@ -143,21 +143,21 @@ const showToast = (message)=>{
     toastBootstrap.show()
 }
 function getStateClass(state) {
-    if (state === "NOT_CONFIRMED" || state === "غير مؤكد") {
+    if (state === "غير مؤكد") {
         return "bg-gradient-dark text-white rounded p-1";
-    } else if (state === "مؤكد" || state === "CONFIRMED") {
+    } else if (state === "مؤكد") {
         return "bg-gradient-success text-white rounded p-1";
-    } else if (state === "جاهز" || state === "READY") {
+    } else if (state === "جاهز") {
         return "bg-gradient-primary text-white rounded p-1";
-    } else if (state === "انتظار" || state === "WAITING") {
+    } else if (state === "انتظار") {
         return "bg-gradient-primary text-white rounded p-1";
-    } else if (state === "في التوصيل" || state === "IN_DELIVERY") {
+    } else if (state === "في التوصيل") {
         return "bg-gradient-info text-white rounded p-1";
-    } else if (state === "تم الغاءة" || state === "CANCELED") {
+    } else if (state === "تم الغاءة") {
         return "bg-gradient-danger text-white rounded p-1";
-    } else if (state === "رفض الاستلام" || state === "REFUSED") {
+    } else if (state === "رفض الاستلام") {
         return "bg-gradient-danger text-white rounded p-1";
-    } else if (state === "تم الاستلام" || state === "DELIVERED") {
+    } else if (state === "تم الاستلام") {
         return "bg-gradient-success text-white rounded p-1";
     }
 }

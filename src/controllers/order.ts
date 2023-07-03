@@ -18,27 +18,62 @@ orderRouter.get("/orders/add",async(req,res)=>{
     return res.render("orders/add.pug",{user:req.session.user,products})
 })
 
-orderRouter.get("/order/:code",rolesMiddleware([UserRoles.ADMIN,UserRoles.OPERATION,UserRoles.CALL_CENTER]),async(req,res)=>{
-    const populate:never[] = ["items", "items.variant","items.product"] as never[];
-    if(req.session.user!.role===UserRoles.ADMIN||req.session.user!.role===UserRoles.OPERATION){
-        populate.push(...["affiliate","confirmedBy"] as never[])
-    }
-    const order = await DI.orderRepository.findOne({orderCode:req.params.code},{populate,cache:true})
-    if(req.get("Accept")==="application/json"){
-        if(!order){
-            throw new NotFoundError("الاوردر غير موجود",ErrorCodes.ENTITY_NOT_FOUND)
+orderRouter.get(
+    "/order/:code",
+    rolesMiddleware([
+        UserRoles.ADMIN,
+        UserRoles.OPERATION,
+        UserRoles.CALL_CENTER,
+    ]),
+    async (req, res) => {
+        const populate: never[] = ["items","items.variant","items.product",] as never[];
+        if (
+            req.session.user!.role === UserRoles.ADMIN ||
+            req.session.user!.role === UserRoles.OPERATION
+        ) {
+            populate.push(
+                ...(["affiliate", "confirmedBy", "shippedBy"] as never[])
+            );
         }
-        return res.json({order})
-    }else{
-        if(!order){
-            return res.render("orders/view.pug",{order:undefined})
-        }else{
-            const isConfirmed = order.orderState!==OrderState.NOT_CONFIRMED
-            const products = isConfirmed?[]:await DI.productRepository.findAll({fields:["id","code","name","buyPrice","affiliatePrice","sellPrice"],cache:true})
-            return res.render("orders/view.pug",{order,products,isConfirmed,user:req.session.user})
+        const order = await DI.orderRepository.findOne(
+            { orderCode: req.params.code },
+            { populate, cache: true }
+        );
+        if (req.get("Accept") === "application/json") {
+            if (!order) {
+                throw new NotFoundError(
+                    "الاوردر غير موجود",
+                    ErrorCodes.ENTITY_NOT_FOUND
+                );
+            }
+            return res.json({ order });
+        } else {
+            if (!order) {
+                return res.render("orders/view.pug", { order: undefined });
+            } else {
+                const isConfirmed =
+                    order.orderState !== OrderState.NOT_CONFIRMED;
+                const products = isConfirmed
+                    ? []
+                    : await DI.productRepository.findAll({
+                          fields: ["id","code","name","buyPrice","affiliatePrice","sellPrice",],
+                          cache: true,
+                      });
+                const companies = await DI.shippingRepository.find(
+                    { isDeleted: false },
+                    { fields: ["id", "name"], cache: true }
+                );
+                return res.render("orders/view.pug", {
+                    order,
+                    products,
+                    isConfirmed,
+                    companies,
+                    user: req.session.user,
+                });
+            }
         }
     }
-})
+);
 
 orderRouter.get("/orders",async(req,res)=>{
     const {state,cursor,page_size,order} = req.query;
@@ -108,7 +143,7 @@ orderRouter.get("/orders",async(req,res)=>{
     const last = orders[(parseInt(page_size as string)||DEFAULT_LIMIT)-1];
     const next = last?last.id:-1
     if(req.get("Accept")==="application/json"){
-        return res.json({orders,next})
+        return res.json({ orders, next, user: req.session.user });
     }
     return res.render("orders/list.pug",{orders,next,user:req.session.user})
 })

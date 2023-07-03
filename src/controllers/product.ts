@@ -9,6 +9,11 @@ import { UniqueConstraintViolationException } from "@mikro-orm/core";
 
 export const productRouter = Router();  
 
+productRouter.get("/api/products/select",rolesMiddleware([UserRoles.ADMIN,UserRoles.CALL_CENTER,UserRoles.OPERATION]),async(req,res)=>{
+    const products = await DI.productRepository.findAll({fields:["id","code","name","buyPrice","affiliatePrice","sellPrice"],cache:true})
+    return res.json({products})
+})
+
 productRouter.get(
     "/products",
     async (req, res) => {
