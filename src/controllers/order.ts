@@ -12,6 +12,7 @@ import { Variant } from "../models/Product";
 import checkParameter from "../middlewares/checkParamter";
 
 export const orderRouter = Router()
+
 orderRouter.get("/orders/add",async(req,res)=>{
     const products = await DI.productRepository.findAll({fields:["id","code","name","buyPrice","affiliatePrice","sellPrice"],cache:true})
     return res.render("orders/add.pug",{user:req.session.user,products})
@@ -30,7 +31,7 @@ orderRouter.get("/order/:code",rolesMiddleware([UserRoles.ADMIN,UserRoles.OPERAT
         return res.json({order})
     }else{
         if(!order){
-            return res.redirect("/")
+            return res.render("orders/view.pug",{order:undefined})
         }else{
             const isConfirmed = order.orderState!==OrderState.NOT_CONFIRMED
             const products = isConfirmed?[]:await DI.productRepository.findAll({fields:["id","code","name","buyPrice","affiliatePrice","sellPrice"],cache:true})
@@ -107,9 +108,44 @@ orderRouter.get("/orders",async(req,res)=>{
     const last = orders[(parseInt(page_size as string)||DEFAULT_LIMIT)-1];
     const next = last?last.id:-1
     if(req.get("Accept")==="application/json"){
-        return res.json({orders,next,user:req.session.user})
+        return res.json({orders,next})
     }
     return res.render("orders/list.pug",{orders,next,user:req.session.user})
+})
+
+orderRouter.get("/orders/shipping",rolesMiddleware([UserRoles.ADMIN,UserRoles.CALL_CENTER,UserRoles.OPERATION]),async(req,res)=>{
+    const { cursor, page_size, order,shipping } = req.query;
+    const DEFAULT_LIMIT = 20;
+    const filter: Record<string, any> = {
+        id:order === "ASC"
+                ? { $gt: parseInt(cursor as string) || 0 }
+                : { $lt: parseInt(cursor as string) || 1e7 },
+    };
+    const options = {
+        limit: parseInt(page_size as string) || DEFAULT_LIMIT,
+        orderBy: { id: (order as "ASC" | "DESC") || "DESC" },
+    };
+    const shippingCompanies = !cursor||shipping?await DI.shippingRepository.find({isDeleted:false},{ cache: true,fields:["id","name"] }):[];
+    const orders = await DI.orderRepository.find(
+        {
+            orderState: { $in: [OrderState.CONFIRMED,OrderState.READY] },
+            shippedBy: undefined,
+            ...filter,
+        },
+        {
+            fields: [
+                "id","orderCode","clientAddress","clientCity","clientGov",
+                "clientName","clientPhone","shippingCost","clientNotes",
+            ],
+            ...options,
+        }
+    );
+    const last = orders[(parseInt(page_size as string) || DEFAULT_LIMIT) - 1];
+    const next = last ? last.id : -1;
+    if(req.get("Accept")==="application/json"){
+        return res.json({orders,shippingCompanies,next})
+    }
+    return res.render("orders/delivery.pug",{orders,shippingCompanies,next,user:req.session.user})
 })
 
 orderRouter.post("/api/order",rolesMiddleware([UserRoles.ADMIN,UserRoles.AFFILIATE]),validationMiddleware(OrderWithItemsDTO),async(req,res)=>{
@@ -197,7 +233,14 @@ orderRouter.put("/api/order/:orderId/confirm",checkParameter(["orderId"]),rolesM
     }
     return res.json({order});
 })
-
+orderRouter.put("/api/orders/shipping",rolesMiddleware([UserRoles.ADMIN,UserRoles.OPERATION,UserRoles.CALL_CENTER]),async(req,res)=>{
+    for(const order of req.body.orders){
+        const orderRef = DI.orderRepository.getReference(parseInt(order[0]))
+        DI.orderRepository.assign(orderRef,{shippedBy:parseInt(order[1])})
+    }
+    await DI.em.flush()
+    return res.sendStatus(200)
+})
 orderRouter.put("/api/order/:orderId/delivered",checkParameter(["orderId"]),rolesMiddleware([UserRoles.ADMIN,UserRoles.OPERATION]),async(req,res)=>{
     const order = DI.orderRepository.getReference(parseInt(req.params.orderId));
     // TODO

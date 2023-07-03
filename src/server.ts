@@ -14,10 +14,11 @@ import { productRouter } from "./controllers/product";
 import authMiddleware from "./middlewares/authMiddleware";
 import { Order, OrderItem, ShippingCompany } from "./models/Order";
 import { orderRouter } from "./controllers/order";
+import { shippingRouter } from "./controllers/shipping";
+
 config();
 
 const app = express();
-
 
 export const DI = {} as {
     orm: MikroORM;
@@ -38,6 +39,7 @@ const init = (async()=>{
     DI.variantRepository = DI.orm.em.getRepository(Variant);
     DI.orderRepository = DI.orm.em.getRepository(Order);
     DI.orderItemRepository = DI.orm.em.getRepository(OrderItem);
+    DI.shippingRepository = DI.orm.em.getRepository(ShippingCompany)
     app.use(express.json())
     app.use(bodyParser.urlencoded({extended:true}))
     app.use(session({
@@ -51,13 +53,14 @@ const init = (async()=>{
     app.set("view engine","pug");
     app.use((req,res,next)=>RequestContext.create(DI.orm.em,next))
     app.get("/",async(req,res)=>{
-        return res.render("home.pug",{user:{id:1,name:"mohammed",role:"ADMIN"}})
+        return res.render("home.pug",{user:req.session.user})
     })
     app.use("",authRouter)
     app.use("",authMiddleware,productRouter)
     app.use("",authMiddleware,orderRouter)
+    app.use("",authMiddleware,shippingRouter)
     app.use(async(req,res)=>{
-        return res.status(404).render("404.pug")
+        return res.status(404).render("404Page.pug")
     })
     app.use(errorMiddleware)
     app.listen(port,()=>{
