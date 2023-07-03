@@ -1,0 +1,120 @@
+extends ../layout.pug
+block content
+    include ../navbar.pug
+    div.container-fluid.py-4
+        div.row
+            div.col-12
+                div.card.mb-4
+                    div.card-header.pb-0
+                        div.d-flex
+                            h6="الاوردرات الجهازة للشحن"
+                            div.me-auto.d-flex.align-items-start.justify-content-center.flex-wrap
+                                button.btn.btn-success.ms-2.d-none.action-btn.ms-1#confirm-changes-btn="تاكيد التغيرات"
+                                button.btn.btn-danger.ms-2.d-none.action-btn.me-1#reset-changes-btn="الغاء التغيرات"
+                    div.card-body.px-0.pt-0.pb-2
+                        div.table-responsive.p-0
+                            table.table.align-items-center.mb-0
+                                thead 
+                                    tr 
+                                        th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="الكود"
+                                        th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="اسم العميل"
+                                        th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="رقم العميل"
+                                        th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="المحافظة"
+                                        th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="المنطقة"
+                                        th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="العنوان"
+                                        th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="شركة الشحن"
+                                tbody
+                                    each order of orders
+                                        tr(id=order.id)
+                                            td.align-middle.text-center
+                                                a(href=`/order/${order.orderCode}` class="link-info")=order.orderCode
+                                            td.align-middle.text-center=order.clientName
+                                            td.align-middle.text-center=order.clientPhone
+                                            td.align-middle.text-center=order.clientGov
+                                            td.align-middle.text-center=order.clientCity
+                                            td.align-middle.text-center=order.clientAddress
+                                            td.align-middle.text-center
+                                                select(class="form-select form-select-sm select-rtl order-shipping-select" data-orderId=order.id)
+                                                    option(style='display:none')="شركة الشحن"
+                                                    each comp of shippingCompanies
+                                                        option(value=comp.id)=comp.name
+            if next!==-1
+                button(id="loadMore" class="btn btn-info bg-gradient-info" data-next=next)="اظهر المزيد"
+
+block append scripts
+    script.
+        $(document).ready(function(){
+            let shippingCompanies = []
+            let ordersShippingChanges = {}
+
+            function renderOrderRow(order) {
+                const options = shippingCompanies.map(ship=>{
+                    return `<option value=${ship.id}>${ship.name}</option>`
+                }).join('')
+                return `
+                    <tr id="${order.id}">
+                        <td class="align-middle text-center">${order.orderCode}</td>
+                        <td class="align-middle text-center">${order.clientName}</td>
+                        <td class="align-middle text-center">${order.clientPhone}</td>
+                        <td class="align-middle text-center">${order.clientGov}</td>
+                        <td class="align-middle text-center">${order.clientCity}</td>
+                        <td class="align-middle text-center">${order.clientAddress}</td>
+                        <td class="align-middle text-center">
+                            <select class="form-select form-select-sm select-rtl order-shipping-select" data-orderId=${order.id}>
+                                <option style='display:none'>"شركة الشحن"</option>
+                                ${options}
+                            </select>
+                        </td>
+                    </tr>
+                `;
+            }
+            const selectShippingEvent = function(){
+                $(".order-shipping-select").on("change",function(){
+                    const order = $(this)
+                    ordersShippingChanges[order.data("orderid")] = order.val()
+                    if($("#confirm-changes-btn,#reset-changes-btn").hasClass("d-none")){
+                        $("#confirm-changes-btn,#reset-changes-btn").removeClass("d-none")
+                    }
+                })
+            }
+            selectShippingEvent()
+            $("#loadMore").on("click",function(){
+                const btn = $(this)
+                const state = $("#stateFilter").val()
+                const success = (response)=>{
+                    btn.data("next",response.next)
+                    if(response.next===-1){
+                        showToast("لا يوجد المزيد من الاوردارت")
+                        $(this).addClass("d-none")
+                    }
+                    if(!shippingCompanies.length&&response.shippingCompanies.length){
+                        shippingCompanies = response.shippingCompanies
+                    }
+                    const orders = response.orders.map(order=>{
+                        return renderOrderRow(order)
+                    })
+                    $("tbody").append(orders)
+                    selectShippingEvent()
+                }
+                requestHandler(`/orders/shipping?cursor=${btn.data("next")}${shippingCompanies.length?"":"&shipping=true"}`,"GET",success,handleRequestErrors,{},{headers:{Accept:"application/json"}})
+            })
+            const resetChanges = ()=>{
+                $(".order-shipping-select").prop('selectedIndex', 0);
+                ordersShippingChanges = {};
+                $(".action-btn").addClass("d-none")
+            }
+            $("#confirm-changes-btn").on("click",function(){
+                const success = (response)=>{
+                    for(const id of Object.keys(ordersShippingChanges)){
+                        const row = $(`#${id}`)
+                        slideAnimation(row,"tbody")
+                    }
+                }
+                const orders = Object.entries(ordersShippingChanges)
+                requestHandler(`/api/orders/shipping`,"PUT",success,handleRequestErrors,{orders})
+            })
+            $("#reset-changes-btn").on("click",function(){
+                resetChanges()
+            })
+        })
+      
