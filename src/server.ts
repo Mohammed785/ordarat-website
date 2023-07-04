@@ -4,7 +4,7 @@ import {config} from "dotenv"
 import bodyParser from "body-parser"
 import session from "express-session"
 import { EntityManager, EntityRepository, MikroORM, RequestContext } from "@mikro-orm/core";
-import {User} from "./models/User";
+import {User, UserRoles} from "./models/User";
 import { SqliteDriver } from "@mikro-orm/sqlite";
 import { authRouter } from "./controllers/auth";
 import errorMiddleware from "./middlewares/errorMiddleware";
@@ -12,9 +12,10 @@ import { join } from "path";
 import { Product, Variant } from "./models/Product";
 import { productRouter } from "./controllers/product";
 import authMiddleware from "./middlewares/authMiddleware";
-import { Order, OrderItem, ShippingCompany } from "./models/Order";
+import { Order, OrderItem, OrderState, ShippingCompany } from "./models/Order";
 import { orderRouter } from "./controllers/order";
 import { shippingRouter } from "./controllers/shipping";
+import { usersRouter } from "./controllers/user";
 
 config();
 
@@ -59,6 +60,7 @@ const init = (async()=>{
     app.use("",authMiddleware,productRouter)
     app.use("",authMiddleware,orderRouter)
     app.use("",authMiddleware,shippingRouter)
+    app.use("",authMiddleware,usersRouter)
     app.use(async(req,res)=>{
         return res.status(404).render("404Page.pug")
     })

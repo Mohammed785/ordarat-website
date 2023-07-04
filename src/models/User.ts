@@ -23,6 +23,12 @@ export class User extends BaseEntity{
     @Property()
     role:UserRoles
 
+    @Property({default:false})
+    isActive?:boolean=false
+    
+    @Property({default:false})
+    isDeleted?:boolean=false
+
     @OneToMany(()=>Product,"owner")
     products = new Collection<Product>(this);
 
