@@ -1,0 +1,173 @@
+extends ../layout.pug
+block content
+    include ../navbar.pug
+    div.container-fluid.py-4
+        div.row
+            div.col-12
+                div.card.mb-4
+                    div.card-header.pb-0
+                        div.d-flex
+                            h6="المستخدمون"
+                            if !active 
+                                div.me-auto.d-flex.align-items-start.justify-content-center.flex-wrap.d-none#actions
+                                    button.btn.btn-success.ms-2.action-btn.ms-1#activate-users-btn="تفعيل الحسابات"
+                                    button.btn.btn-danger.ms-2.action-btn.me-1#reset-selection-btn="الغاء التحديد"
+                    div.card-body.px-0.pt-0.pb-2
+                        div.table-responsive.p-0
+                            table.table.align-items-center.mb-0
+                                thead 
+                                    tr 
+                                        th.text-secondary.font-weight-bolder.opacity-7.text-center
+                                            input(type="checkbox",class="form-check-input border border-dark", id="active-all-user")
+                                        th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="الاسم الاول"
+                                        th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="الاسم الثاني"
+                                        th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="رقم الهاتف"
+                                        th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="البريد"
+                                        th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="نوع المستخدم"
+                                        th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="تفعيل الحساب"
+                                        th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center=active?"حذف الحساب":"رفض الحساب"
+                                        
+                                tbody
+                                    each user of users
+                                        tr(id=user.id)
+                                            td.align-middle.text-center
+                                                input(type="checkbox" class="form-check-input border border-dark active-user"  id=`check-${user.id}` data-id=user.id)
+                                            td.align-middle.text-center=user.firstName
+                                            td.align-middle.text-center=user.lastName
+                                            td.align-middle.text-center=user.phone
+                                            td.align-middle.text-center=user.email
+                                            td.align-middle.text-center=user.role
+                                            td.align-middle.text-center
+                                                button(type="button" class="btn btn-outline-success rounded active-user-btn mb-0" data-userId=user.id)
+                                                    i.fa.fa-check-square
+                                            td.align-middle.text-center
+                                                button(type="button" class="btn btn-outline-danger rounded refuse-user-btn mb-0" data-userId=user.id data-bs-toggle="modal" data-bs-target="#modal-delete")
+                                                    i.fa.fa-check-square
+                    div(class="modal fade" id="modal-delete" tabindex="-1" role="dialog" aria-labelledby="modal-delete" aria-hidden="true")
+                        div(class="modal-dialog modal-danger modal-dialog-centered modal-" role="document")
+                            div.modal-content
+                                div.modal-header
+                                    h6.modal-title="تحذير"
+                                div.modal-body
+                                    div.py-3.text-center
+                                    i.fa.fa-exclamation-triangle.fa-lg
+                                    h4.text-gradient.text-danger.mt-4="هل انت متاكد انك تريد حذف هذا المستخدم"
+                                    p="تنوية: عند حذف المستخدم سيتم حذف كل المعلومات المتعلقة بة."
+                                div.modal-footer
+                                    button(type="button" class="btn btn-danger" id="deleteUserBtn")="احذف المستخدم"
+                                    button(type="button" class="btn btn-white text-primary ml-auto" data-bs-dismiss="modal")="الغاء"
+                                
+            if next!==-1        
+                button(id="loadMore" class="btn btn-info bg-gradient-info" data-next=next)="اظهر المزيد"
+
+block append scripts
+    script.
+        let usersToActivate = []
+        $(document).ready(function(){
+            const activeUserEvent = function(checkbox,checked){
+                if(checked===true){
+                    usersToActivate.push(parseInt(checkbox.data("id")))
+                }else{
+                    usersToActivate = usersToActivate.filter((user)=>user!==parseInt(checkbox.data("id")))
+                }
+                if(usersToActivate.length){
+                    $("#actions").removeClass("d-none")
+                }else{
+                    $("#actions").addClass("d-none")
+                }
+                checkbox.prop('checked', checked);
+            }
+            $("#active-all-user").on("click",function(){
+                const all = $(this)
+                $(".active-user").each(function(idx,check){
+                    activeUserEvent($(check),!!all.prop("checked"))
+                })
+            })
+            $(".active-user").on("click",function(){
+                activeUserEvent($(this),!!$(this).prop("checked"))
+            })
+            function renderUserRow(user) {
+                return `
+                    <tr id="${user.id}">
+                        <td class="align-middle text-center">
+                            <input type="checkbox" class="form-check-input border border-dark active-user" id=check-${user.id} data-id=${user.id}/>
+                        </td>
+                        <td class="align-middle text-center">${user.firstName}</td>
+                        <td class="align-middle text-center">${user.lastName}</td>
+                        <td class="align-middle text-center">${user.phone}</td>
+                        <td class="align-middle text-center">${user.email}</td>
+                        <td class="align-middle text-center">${user.role}</td>
+                        <td class="align-middle text-center">
+                            <button type="button" class="btn btn-outline-success rounded active-user-btn mb-0" data-userId=${user.id}>
+                                <i class="fa fa-check-square"/>
+                            </button>
+                        </td>
+                        <td class="align-middle text-center">
+                            <button type="button" class="btn btn-outline-danger rounded refuse-user-btn mb-0" data-userId=${user.id}>
+                                <i class="fa fa-check-square"/>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                
+            }
+            $("#loadMore").on("click",function(){
+                const btn = $(this)
+                const state = $("#stateFilter").val()
+                const success = (response)=>{
+                    btn.data("next",response.next)
+                    if(response.next===-1){
+                        showToast("لا يوجد المزيد من المستخدمين")
+                        $(this).addClass("d-none")
+                    }
+                    const users = response.users.map(user=>{
+                        return renderUserRow(user)
+                    })
+                    $("tbody").append(users)
+                    $(".active-user").on("click",function(){
+                        activeUserEvent($(this),!!$(this).prop("checked"))
+                    })
+                }
+                requestHandler(`/users?cursor=${btn.data("next")}&active=0`,"GET",success,handleRequestErrors,{},{headers:{Accept:"application/json"}})
+            })
+            $(".active-user-btn").on("click",function(){
+                const btn = $(this)
+                const success = (response)=>{
+                    const row = $(`#${btn.data("userid")}`)
+                    slideAnimation(row,"tbody")
+                }
+                requestHandler(`/users/active`,"PUT",success,handleRequestErrors,{users:[parseInt(btn.data("userid"))]})
+            })
+            $("#activate-users-btn").on("click",function(){
+                if(!usersToActivate.length){
+                    return showToast("يرجي تحديد متسخدمين")
+                }
+                const success = (response)=>{
+                    for(const user of usersToActivate){
+                        const row = $(`#${user}`)
+                        slideAnimation(row,"tbody")
+                    }
+                    usersToActivate=[]
+                    $("#reset-selection-btn").click()
+                }
+                requestHandler(`/users/active`,"PUT",success,handleRequestErrors,{users:usersToActivate})
+            })
+            $("#reset-selection-btn").on("click",function(){
+                $(`input[type="checkbox"]`).prop("checked",false)
+                usersToActivate = [];
+                $("#actions").addClass("d-none")
+            })
+            $(".refuse-user-btn").on("click",function(){
+                $("#deleteUserBtn").data("userid",$(this).data("userid"))
+            })
+            $("#deleteUserBtn").on("click",function(){
+                const btn = $(this)
+                const success = (response)=>{
+                    const row = $(`#${btn.data("userid")}`)
+                    slideAnimation(row,"tbody")
+                    btn.next().click()
+                }
+                requestHandler(`/user/${btn.data("userid")}`,"DELETE",success,handleRequestErrors)
+            })
+        })
+      
