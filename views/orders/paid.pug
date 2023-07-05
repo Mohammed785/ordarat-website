@@ -1,0 +1,153 @@
+extends ../layout.pug
+block content
+    include ../navbar.pug
+    div.container-fluid.py-4
+        div.row
+            div.col-12
+                div.card.mb-4
+                    div.card-header.pb-0
+                        div.d-flex
+                            h6="الاوردرات المنتظر تأكيد دفعها"
+                            div.d-none.me-auto.d-flex.align-items-start.justify-content-center.flex-wrap#actions
+                                button.btn.btn-success.ms-2.action-btn.ms-1#confirm-paid-btn="تاكيد الدفع"
+                                button.btn.btn-danger.ms-2.action-btn.me-1#reset-selection-btn="الغاء التحديد"
+                    div.card-body.px-0.pt-0.pb-2
+                        div.table-responsive.p-0
+                            table.table.align-items-center.mb-0
+                                thead 
+                                    tr 
+                                        th.text-secondary.font-weight-bolder.opacity-7.text-center
+                                            input(type="checkbox",class="form-check-input border border-dark", id="all-orders-paid")
+                                        th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="الكود"
+                                        th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="اسم العميل"
+                                        th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="رقم العميل"
+                                        th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="المحافظة"
+                                        th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="المنطقة"
+                                        th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="العنوان"
+                                        th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="تكلفة الشحن"
+                                        th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="تكلفة الاوردر"
+                                tbody
+                                    each order of orders
+                                        tr(id=order.id)
+                                            td.align-middle.text-center
+                                                input(type="checkbox" class="form-check-input border border-dark order-paid"  id=`paid-${order.id}` data-id=order.id)
+                                            td.align-middle.text-center
+                                                a(href=`/order/${order.orderCode}` class="link-info")=order.orderCode
+                                            td.align-middle.text-center=order.clientName
+                                            td.align-middle.text-center=order.clientPhone
+                                            td.align-middle.text-center=order.clientGov
+                                            td.align-middle.text-center=order.clientCity
+                                            td.align-middle.text-center=order.clientAddress
+                                            td.align-middle.text-center=order.shippingCost
+                                            td.align-middle.text-center=order.totalCost
+                                            td.align-middle.text-center
+                                                button(type="button" class="btn btn-outline-success rounded order-paid-btn mb-0" data-orderId=order.id)
+                                                    i.fa.fa-check-square
+            if next!==-1
+                button(id="loadMore" class="btn btn-info bg-gradient-info" data-next=next)="اظهر المزيد"
+
+block append scripts
+    script.
+        $(document).ready(function(){
+            let paidOrders = [];
+            function renderOrderRow(order) {
+                return `
+                    <tr id="${order.id}">
+                        <td class="align-middle text-center">
+                            <input type="checkbox" class="form-check-input border border-dark order-paid"  id="paid-${order.id}" data-id="${order.id}"/>
+                        </td>
+                        <td class="align-middle text-center">
+                            <a href="/order/${order.orderCode}" class="link-info">${order.orderCode}</a>
+                        </td>
+                        <td class="align-middle text-center">${order.clientName}</td>
+                        <td class="align-middle text-center">${order.clientPhone}</td>
+                        <td class="align-middle text-center">${order.clientGov}</td>
+                        <td class="align-middle text-center">${order.clientCity}</td>
+                        <td class="align-middle text-center">${order.clientAddress}</td>
+                        <td class="align-middle text-center">${order.shippingCost}</td>
+                        <td class="align-middle text-center">${order.totalCost}</td>
+                        <td class="align-middle text-center">
+                            <button type="button" class="btn btn-outline-success rounded order-paid-btn mb-0" data-orderId=${order.id}>
+                                <i class="fa fa-check-square"/>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }
+            $("#loadMore").on("click",function(){
+                const btn = $(this)
+                const success = (response)=>{
+                    btn.data("next",response.next)
+                    if(response.next===-1){
+                        showToast("لا يوجد المزيد من الاوردارت")
+                        $(this).addClass("d-none")
+                    }
+             
+                    const orders = response.orders.map(order=>{
+                        return renderOrderRow(order)
+                    })
+                    $("tbody").append(orders)
+                    $(".order-paid").on("click",function(){
+                        paidOrderEvent($(this),!!$(this).prop("checked"))
+                    })
+                    $(".order-paid-btn").on("click",orderPaidBtn)
+                }
+                requestHandler(`/orders/paid?cursor=${btn.data("next")}`,"GET",success,handleRequestErrors,{},{headers:{Accept:"application/json"}})
+            })
+
+            const paidOrderEvent = function(checkbox,checked){
+                if(checked===true){
+                    paidOrders.push(parseInt(checkbox.data("id")))
+                    if(paidOrders.length===$("tbody tr").length){
+                        $("#all-orders-paid").prop("checked",true)    
+                    }
+                }else{
+                    paidOrders = paidOrders.filter((order)=>order!==parseInt(checkbox.data("id")))
+                    $("#all-orders-paid").prop("checked",false)
+                }
+                if(paidOrders.length){
+                    $("#actions").removeClass("d-none")
+                }else{
+                    $("#actions").addClass("d-none")
+                }
+                checkbox.prop('checked', checked);
+            }
+            $("#all-orders-paid").on("click",function(){
+                const all = $(this)
+                $(".order-paid").each(function(idx,check){
+                    paidOrderEvent($(check),!!all.prop("checked"))
+                })
+            })
+            $(".order-paid").on("click",function(){
+                paidOrderEvent($(this),!!$(this).prop("checked"))
+            })
+            function orderPaidBtn(){
+                const btn = $(this)
+                const success = (response)=>{
+                    const row = $(`#${btn.data("orderid")}`)
+                    slideAnimation(row,"tbody")
+                }
+                requestHandler(`/api/orders/paid`,"PUT",success,handleRequestErrors,{orders:[parseInt(btn.data("orderid"))]})
+            }
+            $(".order-paid-btn").on("click",orderPaidBtn)
+            $("#confirm-paid-btn").on("click",function(){
+                if(!paidOrders.length){
+                    return showToast("يرجي تحديد اوردرات")
+                }
+                const success = (response)=>{
+                    for(const order of paidOrders){
+                        const row = $(`#${order}`)
+                        slideAnimation(row,"tbody")
+                    }
+                    paidOrders=[]
+                    $("#reset-selection-btn").click()
+                }
+                requestHandler(`/api/orders/paid`,"PUT",success,handleRequestErrors,{orders:paidOrders})
+            })
+            $("#reset-selection-btn").on("click",function(){
+                $(`input[type="checkbox"]`).prop("checked",false)
+                paidOrders = [];
+                $("#actions").addClass("d-none")
+            })
+        })
+      
