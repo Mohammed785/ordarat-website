@@ -1,4 +1,4 @@
-import { Collection, Entity, OneToMany, Property } from "@mikro-orm/core";
+import { Collection, Entity, ManyToOne, OneToMany, Property, Ref, Unique, ref } from "@mikro-orm/core";
 import BaseEntity from "./BaseEntity";
 import { Product } from "./Product";
 import { Order } from "./Order";
@@ -46,6 +46,46 @@ export class User extends BaseEntity{
         this.email = email;
         this.password = password;
     }
+}
+@Entity()
+@Unique({properties:["user","order"]})
+export class FinancialRecord extends BaseEntity {
+    @ManyToOne(() => User, { onDelete: "cascade", ref: true })
+    user: Ref<User>;
+    @ManyToOne(() => Order, { onDelete: "cascade", ref: true})
+    order: Ref<Order>;
+    @Property()
+    recordType:RecordTypes
+    @Property()
+    amount:number
+    constructor(amount:number,recordType:RecordTypes,user:User,order:Order){
+        super()
+        this.amount = amount
+        this.recordType = recordType
+        this.user = ref(user)
+        this.order = ref(order)
+    }
+}
+@Entity()
+export class WithdrawRequest extends BaseEntity {
+    @ManyToOne(() => User, { onDelete: "cascade", ref: true })
+    user: Ref<User>;
+
+    @Property({default:false})
+    accepted?:boolean=false
+
+    @Property()
+    amount:number
+    constructor(amount:number,user:User){
+        super()
+        this.user = ref(user)
+        this.amount = amount
+    }
+}
+
+export enum RecordTypes{
+    CONFIRMED = "مؤكد",
+    UNCONFIRMED = "تحت التاكيد",
 }
 
 export enum UserRoles {

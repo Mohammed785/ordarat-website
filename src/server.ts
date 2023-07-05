@@ -4,7 +4,7 @@ import {config} from "dotenv"
 import bodyParser from "body-parser"
 import session from "express-session"
 import { EntityManager, EntityRepository, MikroORM, RequestContext } from "@mikro-orm/core";
-import {User, UserRoles} from "./models/User";
+import { FinancialRecord, User, UserRoles, WithdrawRequest } from "./models/User";
 import { SqliteDriver } from "@mikro-orm/sqlite";
 import { authRouter } from "./controllers/auth";
 import errorMiddleware from "./middlewares/errorMiddleware";
@@ -30,6 +30,8 @@ export const DI = {} as {
     orderRepository: EntityRepository<Order>;
     orderItemRepository: EntityRepository<OrderItem>;
     shippingRepository: EntityRepository<ShippingCompany>;
+    financialRecordRepository: EntityRepository<FinancialRecord>;
+    withdrawRequestRepository: EntityRepository<WithdrawRequest>
 };
 const port = process.env.PORT || 8000;
 const init = (async()=>{
@@ -40,7 +42,9 @@ const init = (async()=>{
     DI.variantRepository = DI.orm.em.getRepository(Variant);
     DI.orderRepository = DI.orm.em.getRepository(Order);
     DI.orderItemRepository = DI.orm.em.getRepository(OrderItem);
-    DI.shippingRepository = DI.orm.em.getRepository(ShippingCompany)
+    DI.shippingRepository = DI.orm.em.getRepository(ShippingCompany);
+    DI.financialRecordRepository = DI.orm.em.getRepository(FinancialRecord);
+    DI.withdrawRequestRepository = DI.orm.em.getRepository(WithdrawRequest)
     app.use(express.json())
     app.use(bodyParser.urlencoded({extended:true}))
     app.use(session({
