@@ -21,3 +21,12 @@ export class RegisterDTO {
     @IsIn(["VENDOR","AFFILIATE"],{message:"يجب ان يكون نوع المستخدم اما مورد او مسوق"})
     role:string
 }
+
+export class ChangePasswordDTO {
+    @Length(8, 30, { message: "يجت ان تكون كلمة المرور القديمة مابين 8 الي 30 حرف" })
+    oldPassword: string;
+    @Length(8, 30, { message: "يجت ان تكون كلمة المرور الجديدة مابين 8 الي 30 حرف" })
+    newPassword: string;
+    @Length(8, 30, { message: "يجت ان تكون كلمة المرور مابين 8 الي 30 حرف" })
+    confirmPassword: string;
+}

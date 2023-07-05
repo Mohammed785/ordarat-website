@@ -1,9 +1,9 @@
 import { Router } from "express";
 import { DI } from "../server";
 import { compare, genSalt, hash } from "bcrypt";
-import { BadRequestError, ErrorCodes, StatusCodes } from "../utils/errors";
+import { BadRequestError, ErrorCodes, NotFoundError, StatusCodes } from "../utils/errors";
 import { validationMiddleware } from "../middlewares/validationMiddleware";
-import { LoginDTO, RegisterDTO } from "../dto/auth";
+import { ChangePasswordDTO, LoginDTO, RegisterDTO } from "../dto/auth";
 import { UniqueConstraintViolationException } from "@mikro-orm/core";
 export const authRouter = Router();
 
@@ -31,6 +31,9 @@ authRouter.post(
                 },
             }
         );
+        if(!user.isActive){
+            throw new BadRequestError("الحساب لم يتم تفعيلة بعد يرجي الانتظار حتي يتم التفعيل")
+        }
         if (!(await compare(password, user.password))) {
             throw new BadRequestError(
                 "يرجي التاكد من رقم الهاتف و كلمة السر",
@@ -72,6 +75,24 @@ authRouter.post(
         }
     }
 );
+
+authRouter.put("/api/auth/changePassword",validationMiddleware(ChangePasswordDTO),async(req,res)=>{
+    if(req.body.confirmPassword!==req.body.newPassword){
+        return res.status(StatusCodes.BAD_REQUEST).json({errors:{confirmPassword:"يجب ان يكون مطابق لي كلمة المرور الجديدة"},code:ErrorCodes.VALIDATION})
+    }
+    const user = await DI.userRepository.findOneOrFail({id:req.session.user?.id},{
+        fields:["password"],
+        failHandler(entityName, where) {
+            return new NotFoundError("المستخدم غير موجود",ErrorCodes.ENTITY_NOT_FOUND)
+        },
+    })
+    if(!await compare(req.body.oldPassword,user.password)){
+        return res.status(StatusCodes.BAD_REQUEST).json({errors:{oldPassword:"كلمة السر القديمة غير صحيحة"},code:ErrorCodes.VALIDATION})
+    }
+    user.password = await hash(req.body.newPassword,await genSalt());
+    await DI.em.flush();
+    return res.sendStatus(200)
+})
 
 authRouter.post("/api/auth/logout", async (req, res, next) => {
     req.session.user = null;
