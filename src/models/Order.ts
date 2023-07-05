@@ -45,6 +45,9 @@ export class Order extends BaseEntity {
     @Property()
     shippingCost?:number=0
 
+    @Property({persist:false})
+    totalCost:number
+
     @Property({ nullable: true })
     deliveryNotes?: string;
 
@@ -194,4 +197,5 @@ export enum OrderState {
     CANCELED = "تم الغاءة",
     REFUSED = "رفض الاستلام",
     DELIVERED = "تم الاستلام",
+    PAID = "تم الدفع"
 }

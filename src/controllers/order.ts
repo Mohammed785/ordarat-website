@@ -1,12 +1,12 @@
 import { Router } from "express";
 import { DI } from "../server";
-import { Order, OrderState } from "../models/Order";
+import { Order, OrderItem, OrderState } from "../models/Order";
 import { BadRequestError, ErrorCodes, NotFoundError } from "../utils/errors";
 import { ForeignKeyConstraintViolationException, UniqueConstraintViolationException } from "@mikro-orm/core";
 import { validationMiddleware } from "../middlewares/validationMiddleware";
 import { OrderDTO, OrderItemsDTO, OrderStateDTO, OrderWithItemsDTO } from "../dto/order";
 import rolesMiddleware from "../middlewares/rolesMiddleware";
-import { UserRoles } from "../models/User";
+import { RecordTypes, UserRoles } from "../models/User";
 import { EntityManager, QueryBuilder } from "@mikro-orm/sqlite";
 import { Variant } from "../models/Product";
 import checkParameter from "../middlewares/checkParamter";
@@ -182,6 +182,37 @@ orderRouter.get("/orders/shipping",rolesMiddleware([UserRoles.ADMIN,UserRoles.CA
     }
     return res.render("orders/delivery.pug",{orders,shippingCompanies,next,user:req.session.user})
 })
+orderRouter.get("/orders/paid",rolesMiddleware([UserRoles.ADMIN]),async(req,res)=>{
+    const { cursor, page_size, order} = req.query;
+    const DEFAULT_LIMIT = 20;
+    const filter: Record<string, any> = {
+        id:order === "ASC"
+                ? { $gt: parseInt(cursor as string) || 0 }
+                : { $lt: parseInt(cursor as string) || 1e7 },
+    };
+    const options = {
+        limit: parseInt(page_size as string) || DEFAULT_LIMIT,
+        orderBy: { id: (order as "ASC" | "DESC") || "DESC" },
+    };
+    const orders = await (DI.em as EntityManager).createQueryBuilder(Order,"order")
+    .leftJoinAndSelect("order.items", "item")
+    .where({ orderState: OrderState.DELIVERED })
+    .andWhere(filter.id)
+    .select(["order.id","order.orderCode","order.clientAddress","order.clientCity","order.clientGov","order.clientName","order.clientPhone","order.shippingCost","SUM(item.cost * item.qty) AS totalCost"])
+    .groupBy("order.id")
+    .orderBy(options.orderBy)
+    .limit(options.limit)
+    .cache(true)
+    .getResultList()
+    
+    const last = orders[(parseInt(page_size as string) || DEFAULT_LIMIT) - 1];
+    const next = last ? last.id : -1;
+    if(req.get("Accept")==="application/json"){
+        return res.json({orders,next})
+    }
+    return res.render("orders/paid.pug",{orders,next,user:req.session.user})
+})
+
 
 orderRouter.post("/api/order",rolesMiddleware([UserRoles.ADMIN,UserRoles.AFFILIATE]),validationMiddleware(OrderWithItemsDTO),async(req,res)=>{
     try {
@@ -248,13 +279,45 @@ orderRouter.put(
 );
 orderRouter.put("/api/orders/state",rolesMiddleware([UserRoles.ADMIN,UserRoles.OPERATION]),validationMiddleware(OrderStateDTO),async(req,res)=>{
     for(const order of req.body.orders){
-        if (order.state === OrderState.DELIVERED) {
-        } else {
-            await DI.orderRepository.nativeUpdate({ id:parseInt(order.id) }, { orderState:order.state as OrderState });
+        if([OrderState.CANCELED,OrderState.REFUSED,OrderState.CONFIRMED,OrderState.NOT_CONFIRMED,OrderState.PAID].includes(order.state)){
+            continue;
         }
+        if (order.state === OrderState.DELIVERED) {
+            const o = await DI.orderRepository.findOne({id:parseInt(order.id)},{populate:["items","items.product","items.variant"]})
+            if(!o){
+                continue
+            }
+            let affiliateProfit = 0;
+            let vendorsProfits:Record<string,number> = {};
+            for(const item of o.items)
+            {
+                affiliateProfit+=item.cost-(item.product.$.buyPrice*item.qty)
+                const productOwner = item.product.$.owner.id
+                vendorsProfits[productOwner] = (vendorsProfits[productOwner] || 0) + item.product.$.buyPrice * item.qty;
+            }
+            const affiliateRecord = DI.financialRecordRepository.create({user:o.affiliate,order:o.id,amount:affiliateProfit,recordType:RecordTypes.UNCONFIRMED})
+
+            for(const [vendor,profit] of Object.entries(vendorsProfits)){
+                const vendorRecord = DI.financialRecordRepository.create({user:parseInt(vendor),order:o.id,amount:profit,recordType:RecordTypes.UNCONFIRMED})
+                DI.em.persist(vendorRecord)
+            }
+            await DI.em.persistAndFlush(affiliateRecord)            
+        }
+        await DI.orderRepository.nativeUpdate({ id:parseInt(order.id) }, { orderState:order.state as OrderState });
     }
     return res.sendStatus(200)
 })
+
+orderRouter.put("/api/orders/confirm",rolesMiddleware([UserRoles.ADMIN,UserRoles.CALL_CENTER]),async(req,res)=>{
+    if(!Array.isArray(req.body.orders)){
+        throw new BadRequestError("يرجي توفير معرفات الاوردرات")
+    }
+    const orders = await DI.orderRepository.nativeUpdate(
+        {id:{$in:req.body.orders},orderState:OrderState.NOT_CONFIRMED},
+        {confirmedBy:req.session.user!.id,orderState:OrderState.CONFIRMED})
+    return res.json({orders})
+})
+
 orderRouter.put("/api/order/:orderId/confirm",checkParameter(["orderId"]),rolesMiddleware([UserRoles.ADMIN,UserRoles.CALL_CENTER]),async(req,res)=>{
     const order = await DI.orderRepository.nativeUpdate(
         {
@@ -268,6 +331,7 @@ orderRouter.put("/api/order/:orderId/confirm",checkParameter(["orderId"]),rolesM
     }
     return res.json({order});
 })
+
 orderRouter.put("/api/orders/shipping",rolesMiddleware([UserRoles.ADMIN,UserRoles.OPERATION,UserRoles.CALL_CENTER]),async(req,res)=>{
     for(const order of req.body.orders){
         const orderRef = DI.orderRepository.getReference(parseInt(order[0]))
@@ -276,13 +340,13 @@ orderRouter.put("/api/orders/shipping",rolesMiddleware([UserRoles.ADMIN,UserRole
     await DI.em.flush()
     return res.sendStatus(200)
 })
-orderRouter.put("/api/order/:orderId/delivered",checkParameter(["orderId"]),rolesMiddleware([UserRoles.ADMIN,UserRoles.OPERATION]),async(req,res)=>{
-    const order = DI.orderRepository.getReference(parseInt(req.params.orderId));
-    // TODO
-    // await DI.em.flush();
-    return res.json({order});
+orderRouter.put("/api/orders/paid",rolesMiddleware([UserRoles.ADMIN]),async(req,res)=>{
+    for(const order of req.body.orders){
+        await DI.orderRepository.nativeUpdate({id:parseInt(order)},{orderState:OrderState.PAID})
+        await DI.financialRecordRepository.nativeUpdate({order},{recordType:RecordTypes.CONFIRMED})
+    }
+    return res.sendStatus(200)
 })
-
 orderRouter.delete("/api/orders",rolesMiddleware([UserRoles.ADMIN,UserRoles.OPERATION,UserRoles.CALL_CENTER]),validationMiddleware(OrderStateDTO),async(req,res)=>{
     const isCallCenter = req.session.user?.role === UserRoles.CALL_CENTER;
     for(const o of req.body.orders){
