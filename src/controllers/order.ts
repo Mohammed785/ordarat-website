@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { DI } from "../server";
-import { Order, OrderItem, OrderState } from "../models/Order";
+import { Order, OrderState } from "../models/Order";
 import { BadRequestError, ErrorCodes, NotFoundError } from "../utils/errors";
 import { ForeignKeyConstraintViolationException, UniqueConstraintViolationException } from "@mikro-orm/core";
 import { validationMiddleware } from "../middlewares/validationMiddleware";
@@ -76,7 +76,7 @@ orderRouter.get(
 );
 
 orderRouter.get("/orders",async(req,res)=>{
-    const {state,cursor,page_size,order} = req.query;
+    const {state,cursor,page_size,order,needConfirm} = req.query;
     const userRole = req.session.user?.role;
     const DEFAULT_LIMIT = 20;
     const filter: Record<string, any> = {
@@ -145,7 +145,8 @@ orderRouter.get("/orders",async(req,res)=>{
     if(req.get("Accept")==="application/json"){
         return res.json({ orders, next, user: req.session.user });
     }
-    return res.render("orders/list.pug",{orders,next,user:req.session.user})
+    const view = state==="غير مؤكد"&&needConfirm==='1'?"needConfirm.pug":"list.pug"
+    return res.render(`orders/${view}`,{orders,next,user:req.session.user})
 })
 
 orderRouter.get("/orders/shipping",rolesMiddleware([UserRoles.ADMIN,UserRoles.CALL_CENTER,UserRoles.OPERATION]),async(req,res)=>{

@@ -57,8 +57,6 @@ block content
                               th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="المنطقة"
                               th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="العنوان"
                               th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="حالة الاوردر"
-                              if user.role==="CALL_CENTER" || user.role==="ADMIN"
-                                 th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="تاكيد الاوردر"
                               if user.role==="OPERATION" || user.role==="ADMIN"
                                  th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="تغير حالة الاوردر"
                               if user.role!=="VENDOR"&&user.role!=="AFFILIATE"
@@ -78,15 +76,9 @@ block content
                                  td.align-middle.text-center=order.clientAddress
                                  td(class=`align-middle text-center `)
                                     p(class=`${getStateClass(order.orderState)} mb-0`)=order.orderState
-                                 if (user.role==="CALL_CENTER" || user.role==="ADMIN")
-                                    td.align-middle.text-center
-                                       if order.orderState==="غير مؤكد"
-                                          button(type="button" class="btn btn-outline-success rounded confirm-order-btn mb-0" data-orderId=order.id)
-                                             i.fa.fa-check-square
-                                       
                                  if user.role==="OPERATION" || user.role==="ADMIN"
                                     td.align-middle.text-center
-                                       if !["تم الاستلام","DELIVERED","تم الغاءة","رفض الاستلام","CANCELED","REFUSED"].includes(order.orderState)
+                                       if !["تم الاستلام","تم الغاءة","رفض الاستلام","غير مؤكد"].includes(order.orderState)
                                           select(class="form-select form-select-sm select-rtl order-state-select" data-orderId=order.id)
                                              option(style='display:none')="حالة الاوردر"
                                              each state of ["جاهز","في التوصيل","تم الغاءة","رفض الاستلام","انتظار","تم الاستلام"]
@@ -101,18 +93,7 @@ block content
 block append scripts
    script.
       $(document).ready(function(){
-         const confirmOrdersEvent = function(){
-            $(".confirm-order-btn").each(function(idx,btn){
-               $(btn).on("click",function(){
-                  const orderId = $(btn).data("orderid");
-                  const success = (response)=>{
-                     const row = $(`#${orderId}`)
-                     slideAnimation(row,"tbody")
-                  }
-                  requestHandler(`/api/order/${orderId}/confirm`,"PUT",success,handleRequestErrors)
-               })
-            })
-         }
+         let ordersStateChanges = {}
          const orderStateSelectEvent = function(){
             $(".order-state-select").on("change",function(){
                const order = $(this)
@@ -124,7 +105,6 @@ block append scripts
             })
          }
          orderStateSelectEvent()
-         confirmOrdersEvent()
          if(localStorage.hasOwnProperty("states")){
             $("#restore-changes-btn,#reset-changes-btn").removeClass("d-none")
 
@@ -132,24 +112,11 @@ block append scripts
 
          function renderOrderRow(order, user) {
             const stateClass = getStateClass(order.orderState);
-            let confirmButton = '';
             let stateSelect = '';
             let clientNotes = '';
             let deliveryNotes = '';
-            if ((user.role === 'CALL_CENTER' || user.role === 'ADMIN')) {
-               let btn = ``
-               if(order.orderState === 'غير مؤكد'){
-                  btn = `<button type="button" class="btn btn-outline-success rounded confirm-order-btn mb-0" data-orderId="${order.id}">
-                  <i class="fa fa-check-square"></i>
-               </button>`
-               }
-               confirmButton = `<td class="align-middle text-center">
-                  ${btn}
-               </td>`;
-            }
-            if (user.role === 'OPERATION' || user.role === 'ADMIN') {
+            if ((user.role === 'OPERATION' || user.role === 'ADMIN')&&!["تم الاستلام","تم الغاءة","رفض الاستلام","غير مؤكد"].includes(order.orderState)) {
                const orderStates = ['جاهز','في التوصيل','تم الغاءة','رفض الاستلام','انتظار','تم الاستلام'];
-
                stateSelect = `<td class="align-middle text-center"><select class="form-select form-select-sm select-rtl order-state-select" data-orderId="${order.id}">
                   <option style="display:none">حالة الاوردر</option>
                   ${orderStates.map(state => {
@@ -181,7 +148,6 @@ block append scripts
                   <td class="align-middle text-center">
                   <p class="${stateClass} mb-0">${order.orderState}</p>
                   </td>
-                  ${confirmButton}
                   ${stateSelect}
                   ${clientNotes}
                   ${deliveryNotes}
@@ -201,12 +167,10 @@ block append scripts
                   return renderOrderRow(order,response.user)
                })
                $("tbody").append(orders)
-               confirmOrdersEvent()
                orderStateSelectEvent()
             }
             requestHandler(`/orders?state=${state}&cursor=${btn.data("next")}`,"GET",success,handleRequestErrors,{},{headers:{Accept:"application/json"}})
          })
-         let ordersStateChanges = {}
          const resetChanges = ()=>{
             $(".order-state-select").prop('selectedIndex', 0);
             ordersStateChanges = {};
@@ -224,16 +188,30 @@ block append scripts
             const toUpdate = []
 
             for(const [id,state] of Object.entries(ordersStateChanges)){
-               if(["تم الغاءة","رفض الاستلام","REFUSED","CANCELED"].includes(state)){
+               if(["تم الغاءة","رفض الاستلام"].includes(state)){
                   toDelete.push({id,state})
                }else{
                   toUpdate.push({id,state})
                }
             }
-            requestHandler(`/api/orders/state`,"PUT",success,handleRequestErrors,{orders:toUpdate})
-            requestHandler(`/api/orders`,"DELETE",success,handleRequestErrors,{orders:toDelete})
+            if(toUpdate.length){
+               requestHandler(`/api/orders/state`,"PUT",success,handleRequestErrors,{orders:toUpdate})
+            }
+            if(toDelete.length){
+               requestHandler(`/api/orders`,"DELETE",success,handleRequestErrors,{orders:toDelete})
+            }
+            updateState([...toDelete,...toUpdate])
             resetChanges()
          })
+         function updateState(orders){
+            for(const order of orders){
+               const row = $(`#${order.id}`);
+               const state = row.find("td p");
+               state.removeClass()
+               state.addClass(`${getStateClass(order.state)} mb-0`)
+               state.text(order.state)
+            }
+         }
          $("#reset-changes-btn").on("click",function(){
             resetChanges()
          })
@@ -251,9 +229,7 @@ block append scripts
             const state = $(this).val();
             const success = (response)=>{
                $("tbody").empty();
-               console.log(response.user)
                const nextBtn = $("#loadMore")
-               console.log(response)
                if(response.next===-1){
                   showToast("لا يوجد المزيد من الاوردارت")
                   !nextBtn.hasClass("d-none")&&nextBtn.addClass("d-none")
@@ -265,7 +241,7 @@ block append scripts
                   return renderOrderRow(order,response.user)
                })
                $("tbody").append(orders)
-               confirmOrdersEvent()
+               orderStateSelectEvent()
             }
             requestHandler(`/orders?state=${state}`,"GET",success,handleRequestErrors,{},{headers:{Accept:"application/json"}});
          })

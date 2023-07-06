@@ -1,0 +1,156 @@
+extends ../layout.pug
+block content
+    include ../navbar.pug
+    div.container-fluid.py-4
+        div.row
+            div.col-12
+                div.card.mb-4
+                    div.card-header.pb-0
+                        div.d-flex
+                            h6="الاوردرات الغير مؤكدة"
+                            div.d-none.me-auto.d-flex.align-items-start.justify-content-center.flex-wrap#actions
+                                button.btn.btn-success.ms-2.action-btn.ms-1#confirm-all-orders="تاكيد الاوردرات"
+                                button.btn.btn-danger.ms-2.action-btn.me-1#reset-selection-btn="الغاء التحديد"
+                    div.card-body.px-0.pt-0.pb-2
+                        div.table-responsive.p-0
+                            table.table.align-items-center.mb-0
+                                thead 
+                                    tr 
+                                        th.text-secondary.font-weight-bolder.opacity-7.text-center
+                                            input(type="checkbox",class="form-check-input border border-dark", id="select-all-orders")
+                                        th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="الكود"
+                                        th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="اسم العميل"
+                                        th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="رقم العميل"
+                                        th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="المحافظة"
+                                        th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="المنطقة"
+                                        th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="العنوان"
+                                        th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="تاكيد الاوردر"
+                                        th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="ملاحظات العميل"
+
+
+                                tbody
+                                    each order of orders
+                                        tr(id=order.id)
+                                            td.align-middle.text-center
+                                                input(type="checkbox" class="form-check-input border border-dark confirm-order"  id=`check-${order.id}` data-id=order.id)
+                                            td.align-middle.text-center
+                                                a(href=`/order/${order.orderCode}` class="link-info")=order.orderCode
+                                            td.align-middle.text-center=order.clientName
+                                            td.align-middle.text-center=order.clientPhone
+                                            td.align-middle.text-center=order.clientGov
+                                            td.align-middle.text-center=order.clientCity
+                                            td.align-middle.text-center=order.clientAddress
+                                            td.align-middle.text-center
+                                                button(type="button" class="btn btn-outline-success rounded confirm-order-btn mb-0" data-orderId=order.id)
+                                                    i.fa.fa-check-square
+                                            td.align-middle.text-center=order.clientNotes
+                    
+            if next!==-1        
+                button(id="loadMore" class="btn btn-info bg-gradient-info" data-next=next)="اظهر المزيد"
+
+block append scripts
+    script.
+        let ordersToConfirm = []
+        $(document).ready(function(){
+            const confirmOrderEvent = function(checkbox,checked){
+                if(checked===true){
+                    ordersToConfirm.push(parseInt(checkbox.data("id")))
+                    if(ordersToConfirm.length===$("tbody tr").length){
+                        $("#select-all-orders").prop("checked",true)    
+                    }
+                }else{
+                    ordersToConfirm = ordersToConfirm.filter((user)=>user!==parseInt(checkbox.data("id")))
+                    $("#select-all-orders").prop("checked",false)
+                }
+                console.log(ordersToConfirm)
+                if(ordersToConfirm.length){
+                    $("#actions").removeClass("d-none")
+                }else{
+                    $("#actions").addClass("d-none")
+                }
+                checkbox.prop('checked', checked);
+            }
+            $("#select-all-orders").on("click",function(){
+                const all = $(this)
+                $(".confirm-order").each(function(idx,check){
+                    confirmOrderEvent($(check),!!all.prop("checked"))
+                })
+            })
+            $(".confirm-order").on("click",function(){
+                confirmOrderEvent($(this),!!$(this).prop("checked"))
+            })
+            function renderOrderRow(order) {
+                return `
+                    <tr id="${order.id}">
+                        <td class="align-middle text-center">
+                            <input type="checkbox" class="form-check-input border border-dark confirm-order" id=check-${order.id} data-id=${order.id}/>
+                        </td>
+                        <td class="align-middle text-center">
+                            <a href="/order/${order.orderCode}" class="link-info">${order.orderCode}</a>
+                        </td>
+                        <td class="align-middle text-center">${order.clientName}</td>
+                        <td class="align-middle text-center">${order.clientPhone}</td>
+                        <td class="align-middle text-center">${order.clientGov}</td>
+                        <td class="align-middle text-center">${order.clientCity}</td>
+                        <td class="align-middle text-center">${order.clientAddress}</td>
+                        <td class="align-middle text-center">
+                            <button type="button" class="btn btn-outline-success rounded confirm-order-btn mb-0" data-orderId=${order.id}>
+                                <i class="fa fa-check-square"/>
+                            </button>
+                        </td>
+                        <td class="align-middle text-center">${order.clientNotes||""}</td>
+                    </tr>
+                `;
+                
+            }
+            $("#loadMore").on("click",function(){
+                const btn = $(this)
+                const success = (response)=>{
+                    console.log(response)
+                    btn.data("next",response.next)
+                    if(response.next===-1){
+                        showToast("لا يوجد المزيد من المستخدمين")
+                        $(this).addClass("d-none")
+                    }
+                    const orders = response.orders.map(order=>{
+                        return renderOrderRow(order)
+                    })
+                    $("tbody").append(orders)
+                    $(".confirm-order").on("click",function(){
+                        confirmOrderEvent($(this),!!$(this).prop("checked"))
+                    })
+                    $(".confirm-order-btn").on("click",confirmOrderBtn)
+                }
+                requestHandler(`/orders?cursor=${btn.data("next")}&state=غير مؤكد`,"GET",success,handleRequestErrors,{},{headers:{Accept:"application/json"}})
+            })
+            function confirmOrderBtn(){
+                const btn = $(this)
+                const success = (response)=>{
+                    const row = $(`#${btn.data("orderid")}`)
+                    slideAnimation(row,"tbody")
+                }
+                requestHandler(`/api/order/${btn.data("orderid")}/confirm`,"PUT",success,handleRequestErrors)
+            }
+            $(".confirm-order-btn").on("click",confirmOrderBtn)
+            
+            $("#confirm-all-orders").on("click",function(){
+                if(!ordersToConfirm.length){
+                    return showToast("يرجي تحديد اوردرات")
+                }
+                const success = (response)=>{
+                    for(const order of ordersToConfirm){
+                        const row = $(`#${order}`)
+                        slideAnimation(row,"tbody")
+                    }
+                    ordersToConfirm=[]
+                    $("#reset-selection-btn").click()
+                }
+                requestHandler(`/api/orders/confirm`,"PUT",success,handleRequestErrors,{orders:ordersToConfirm})
+            })
+            $("#reset-selection-btn").on("click",function(){
+                $(`input[type="checkbox"]`).prop("checked",false)
+                ordersToConfirm = [];
+                $("#actions").addClass("d-none")
+            })
+        })
+      
