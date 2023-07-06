@@ -57,9 +57,6 @@ const init = (async()=>{
     app.set("views",join(__dirname,"..","views"));
     app.set("view engine","pug");
     app.use((req,res,next)=>RequestContext.create(DI.orm.em,next))
-    app.get("/",async(req,res)=>{
-        return res.render("home.pug",{user:req.session.user})
-    })
     app.use("",authRouter)
     app.use("",authMiddleware,productRouter)
     app.use("",authMiddleware,orderRouter)

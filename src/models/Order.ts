@@ -46,7 +46,7 @@ export class Order extends BaseEntity {
     shippingCost?:number=0
 
     @Property({persist:false})
-    totalCost:number
+    totalCost?:number
 
     @Property({ nullable: true })
     deliveryNotes?: string;

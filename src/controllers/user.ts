@@ -1,10 +1,23 @@
 import { Router } from "express";
 import rolesMiddleware from "../middlewares/rolesMiddleware";
-import { UserRoles } from "../models/User";
+import { FinancialRecord, UserRoles } from "../models/User";
 import { DI } from "../server";
 import { ErrorCodes, NotFoundError } from "../utils/errors";
+import { EntityManager } from "@mikro-orm/sqlite";
 
 export const usersRouter = Router();
+
+usersRouter.get("/",async(req,res)=>{
+    const qb = (DI.em as EntityManager).createQueryBuilder(FinancialRecord,"fr")
+    const profits = await qb.select(
+        `id,SUM(IIF(record_type="مؤكد",amount,0)) AS confirmedBalance,
+        SUM(IIF(record_type="تحت التاكيد",amount,0)) AS unconfirmedBalance,
+        COUNT(DISTINCT order_id) AS ordersCount`
+    ).where({user:req.session.user?.id})
+    .cache(true)
+    .getSingleResult()
+    return res.render("home.pug",{user:req.session.user,profits})
+})
 
 usersRouter.get(
     "/users",

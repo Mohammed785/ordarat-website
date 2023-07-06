@@ -58,6 +58,14 @@ export class FinancialRecord extends BaseEntity {
     recordType:RecordTypes
     @Property()
     amount:number
+
+    @Property({persist:false})
+    confirmedBalance?:number
+    @Property({persist:false})
+    unconfirmedBalance?:number
+    @Property({persist:false})
+    ordersCount?:number;
+
     constructor(amount:number,recordType:RecordTypes,user:User,order:Order){
         super()
         this.amount = amount

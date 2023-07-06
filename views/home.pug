@@ -1,0 +1,59 @@
+extends layout.pug
+
+block content 
+    include navbar.pug
+    div.container-fluid.py-4
+        div.row
+           div.col-xl-4.col-sm-6.mb-xl-0.mb-4 
+                div.card.move-on-hover
+                    div.card-body.p-3
+                        div.row
+                            div.col-8
+                                div.numbers
+                                    p.text-sm.mb-0.text-capitalize.font-weight-bold="ارباح مؤكدة"
+                                    h5.font-weight-bolder.mb-0=` $${profits.confirmedBalance} `
+                                        //- span.text-success.text-sm.font-weight-bolder="+55%"
+                            div.col-4.text-end
+                                div.icon.icon-shape.bg-gradient-dark.shadow.text-center.border-radius-md
+                                    i(class="fa fa-coins text-lg opacity-10" aria-hidden="true")
+           div.col-xl-4.col-sm-6.mb-xl-0.mb-4 
+                div.card
+                    div.card-body.p-3
+                        div.row
+                            div.col-8
+                                div.numbers
+                                    p.text-sm.mb-0.text-capitalize.font-weight-bold="ارباح تحت التاكيد"
+                                    h5.font-weight-bolder.mb-0=` $${profits.unconfirmedBalance} `
+                                        //- span.text-danger.text-sm.font-weight-bolder="-3%"
+                            div.col-4.text-end
+                                div.icon.icon-shape.bg-gradient-dark.shadow.text-center.border-radius-md
+                                    i(class="fa fa-users text-lg opacity-10" aria-hidden="true")
+           div.col-xl-4.col-sm-6.mb-xl-0.mb-4 
+                div.card
+                    div.card-body.p-3
+                        div.row
+                            div.col-8
+                                div.numbers
+                                    p.text-sm.mb-0.text-capitalize.font-weight-bold="عدد الاوردرات"
+                                    h5.font-weight-bolder.mb-0=` ${profits.ordersCount} `
+                                        //- span.text-success.text-sm.font-weight-bolder="+3%"
+                            div.col-4.text-end
+                                div.icon.icon-shape.bg-gradient-dark.shadow.text-center.border-radius-md
+                                    i(class="fa fa-hand-holding-usd text-lg opacity-10" aria-hidden="true")
+           
+        div.row.mt-4
+            div.col-lg-12.mb-lg-0.mb-4 
+                div.card
+                    div.card-body.p-3
+                        div.row
+                            div.col-lg-5.ms-auto.text-center.mt-5.mt-lg-0
+                                div.bg-gradient-dark.border-radius-lg.h-100
+                                    div.position-relative.d-flex.align-items-center.justify-content-center.h-100
+                                        img(class="w-100 position-relative z-index-2 pt-4" src="img/rocket.png" alt="rocket")
+                            div.col-lg-6
+                                div.d-flex.flex-column.h-100
+                                    p.mb-1.pt-2.text-bold="عظم ارباحك معا"
+                                    h5.font-weight-bolder="اي اسم بقا"
+                                    p.mb-5="شوية كلام دعاية واعلان وتنمية وبشرية وحقق حلمك والذي منو."
+                                    a(class="text-body text-sm font-weight-bold mb-0 icon-move-left mt-auto" href="javascript:;")=" اقراء المزيد "
+                                        i(class="fas fa-arrow-left text-sm ms-1" aria-hidden="true")
