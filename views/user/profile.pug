@@ -1,0 +1,90 @@
+extends ../layout.pug
+
+block content 
+    include ../navbar.pug
+    div.container-fluid.py-4
+        div.row
+            div.col
+                div.card.z-index-0
+                    div.card-body
+                        h6.text-center="معلومات الحساب"
+                        form(role="form" method="POST" class="needs-validation" novalidate id="updateInfoForm")
+                            div.row
+                                div.col 
+                                    label="الاسم الاول"
+                                    div.mb-3
+                                        input(type="text" name="firstName" id="firstName" value=user.firstName minlength="2" maxlength="25" class="form-control rtl" placeholder="ادخل الاسم الاول" aria-label="الاسم الاول" aria-describedby="invalid-firstName" required)
+                                        p.invalid-feedback#invalid-firstName
+                                div.col
+                                    label="الاسم الثاني"
+                                    div.mb-3
+                                        input(type="text" name="lastName" id="lastName" value=user.lastName minlength="2" maxlength="25" class="form-control rtl" placeholder="ادخل الاسم الثاني" aria-label="الاسم الثاني" aria-describedby="invalid-lastName" required)
+                                        p.invalid-feedback#invalid-lastName
+                            label="رقم الهاتف"
+                            div.mb-3
+                                input(type="text" name="phone" id="phone" class="form-control rtl" value=user.phone minlength="11" maxlength="11" placeholder="ادخل رقم الهاتف" aria-label="رقم الهاتف" aria-describedby="invalid-phone" required)
+                                p.invalid-feedback#invalid-phone
+                            label="البريد الالكتروني" 
+                            div.mb-3
+                                input(type="email" class="form-control rtl" name="email" id="email" value=user.email placeholder="ادخل البريد الالكتورني" aria-label="البريد الالكتروني" aria-describedby="invalid-email" required)
+                                p.invalid-feedback#invalid-email
+
+                            div.text-center
+                                button(type="submit" class="btn bg-gradient-dark w-100 my-4 mb-2")="تحديث معلومات الحساب"
+            div.col-4
+                div.card.z-index-0
+                    div.card-body
+                        h6.text-center="تغير كلمة المرور"
+                        form(role="form" method="POST" class="needs-validation" novalidate id="changePasswordForm")
+                            label="كلمة المرور القديمة"
+                            div.mb-3
+                                input(type="password" class="form-control rtl" minlength="8" maxlength="30" name="oldPassword" id="oldPassword" placeholder="ادخل كلمة المرور" aria-label="Password" aria-describedby="invalid-oldPassword" required)
+                                p.invalid-feedback#invalid-oldPassword
+                            label="كلمة المرور الجديدة"
+                            div.mb-3
+                                input(type="password" class="form-control rtl" minlength="8" maxlength="30" name="newPassword" id="newPassword" placeholder="ادخل كلمة المرور" aria-label="New Password" aria-describedby="invalid-newPassword" required)
+                                p.invalid-feedback#invalid-newPassword
+                            label="تأكيد كلمة المرور"
+                            div.mb-3
+                                input(type="password" class="form-control rtl" minlength="8" maxlength="30" name="confirmPassword" id="confirmPassword" placeholder="ادخل كلمة المرور" aria-label="Confirm Password" aria-describedby="invalid-confirmPassword" required)
+                                p.invalid-feedback#invalid-confirmPassword
+                            div.text-center
+                                button(type="submit" class="btn bg-gradient-dark w-100 my-4 mb-2")="تغير كلمة المرور"
+
+block append scripts
+    script.
+        $(document).ready(function(){
+            $("#updateInfoForm").on("submit",function(e){
+                e.preventDefault()
+                const valid = validateInput({
+                    firstName:{required:{message:"يرجي توفير الاسم الاول"},length:{min:2,max:25,message:"يجب ان يكون طول الاسم مابين 2 لي 25 حرف"}},
+                    lastName:{required:{message:"يرجي توفير الاسم الثاني"},length:{min:2,max:25,message:"يجب ان يكون طول الاسم مابين 2 لي 25 حرف"}},
+                    email:{required:{message:"يرجي توفير بريد الكتروني"},isEmail:{message:"يجب توفير بريد الكتروني صحيح"}},
+                    phone:{required:{message:"يرجي توفير رقم هاتف"},isPhone:{message:"يرجي ادخال رقم هاتف صحيح"}}
+                })
+                if(!valid){
+                    return
+                }
+                const success = (response)=>{
+                    addAlert("success","تم تحديث المعلومات بنجاح")
+                }
+                const data = Object.fromEntries(new FormData(e.target).entries())
+                requestHandler("/api/profile","PUT",success,handleRequestErrors,data)
+            })
+            $("#changePasswordForm").on("submit",function(e){
+                e.preventDefault()
+                const valid = validateInput({
+                    oldPassword:{required:{message:"يرجي توفير كلمة المرور القديمة"},length:{min:8,max:30,message:"يجب ان يكون طول كلمة المرور مابين 8 لي 30 حرف"}},
+                    newPassword:{required:{message:"يرجي توفير كلمة المرور الجديدة"},length:{min:8,max:30,message:"يجب ان يكون طول كلمة المرور مابين 8 لي 30 حرف"}},
+                    confirmPassword:{required:{message:"يرجي توفير تاكيد كلمة المرور"},length:{min:8,max:30,message:"يجب ان يكون طول كلمة المرور مابين 8 لي 30 حرف"}}
+                })
+                if(!valid){
+                    return
+                }
+                const success = (response)=>{
+                    addAlert("success","تم تغير كلمة المرور بنجاح")
+                }
+                const data = Object.fromEntries(new FormData(e.target).entries())
+                requestHandler("/api/auth/changePassword","PUT",success,handleRequestErrors,data)                
+            })
+        })

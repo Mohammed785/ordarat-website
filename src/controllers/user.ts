@@ -43,6 +43,13 @@ usersRouter.get("/profile", async (req, res) => {
     return res.render("user/profile.pug", { user });
 });
 
+usersRouter.put("/api/profile",async(req,res)=>{
+    const user = DI.userRepository.getReference(req.session.user!.id)
+    DI.userRepository.assign(user,req.body)
+    await DI.em.flush()
+    return res.json(user)
+})
+
 usersRouter.put("/users/active",rolesMiddleware([UserRoles.ADMIN]),async(req,res)=>{
     const activatedUsers = await DI.userRepository.nativeUpdate({id:{$in:req.body.users}},{isActive:true})
     return res.json({activatedUsers})
