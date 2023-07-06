@@ -72,13 +72,10 @@ block content
                                                     select(name="shippedBy" id="shippedBy" disabled=isConfirmed class="form-select rtl select-rtl")
                                                         each comp of companies
                                                             option(value=comp.id selected=order.shippedBy.id===comp.id)=comp.name
-                                                        
                                             div.col
                                                 div.mb-3
                                                     label="حالة الاوردر"
-                                                    select(name="orderState" id="orderState" class="form-select rtl select-rtl") 
-                                                        each state of ["جاهز","في التوصيل","تم الغاءة","رفض الاستلام","انتظار","تم الاستلام","مؤكد","غير مؤكد"]
-                                                            option(value=state selected=state===order.orderState)=state
+                                                    input(class="form-control rtl" disabled value=order.orderState)
                                     
                                     if !isConfirmed
                                         button(type="submit" id="updateClientInfoBtn" class="btn btn-info w-100 d-none")="تحديث معلومات العميل"

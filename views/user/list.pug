@@ -9,7 +9,7 @@ block content
                         div.d-flex
                             h6="المستخدمون"
                             if !active 
-                                div.me-auto.d-flex.align-items-start.justify-content-center.flex-wrap.d-none#actions
+                                div.d-none.me-auto.d-flex.align-items-start.justify-content-center.flex-wrap#actions
                                     button.btn.btn-success.ms-2.action-btn.ms-1#activate-users-btn="تفعيل الحسابات"
                                     button.btn.btn-danger.ms-2.action-btn.me-1#reset-selection-btn="الغاء التحديد"
                     div.card-body.px-0.pt-0.pb-2
@@ -42,7 +42,7 @@ block content
                                                     i.fa.fa-check-square
                                             td.align-middle.text-center
                                                 button(type="button" class="btn btn-outline-danger rounded refuse-user-btn mb-0" data-userId=user.id data-bs-toggle="modal" data-bs-target="#modal-delete")
-                                                    i.fa.fa-check-square
+                                                    i.fa.fa-trash
                     div(class="modal fade" id="modal-delete" tabindex="-1" role="dialog" aria-labelledby="modal-delete" aria-hidden="true")
                         div(class="modal-dialog modal-danger modal-dialog-centered modal-" role="document")
                             div.modal-content
@@ -67,8 +67,12 @@ block append scripts
             const activeUserEvent = function(checkbox,checked){
                 if(checked===true){
                     usersToActivate.push(parseInt(checkbox.data("id")))
+                    if(usersToActivate.length===$("tbody tr").length){
+                        $("#active-all-user").prop("checked",true)    
+                    }
                 }else{
                     usersToActivate = usersToActivate.filter((user)=>user!==parseInt(checkbox.data("id")))
+                    $("#active-all-user").prop("checked",false)
                 }
                 if(usersToActivate.length){
                     $("#actions").removeClass("d-none")
@@ -104,7 +108,7 @@ block append scripts
                         </td>
                         <td class="align-middle text-center">
                             <button type="button" class="btn btn-outline-danger rounded refuse-user-btn mb-0" data-userId=${user.id}>
-                                <i class="fa fa-check-square"/>
+                                <i class="fa fa-trash"/>
                             </button>
                         </td>
                     </tr>
@@ -113,7 +117,6 @@ block append scripts
             }
             $("#loadMore").on("click",function(){
                 const btn = $(this)
-                const state = $("#stateFilter").val()
                 const success = (response)=>{
                     btn.data("next",response.next)
                     if(response.next===-1){
@@ -127,17 +130,22 @@ block append scripts
                     $(".active-user").on("click",function(){
                         activeUserEvent($(this),!!$(this).prop("checked"))
                     })
+                    $(".refuse-user-btn").on("click",function(){
+                        $("#deleteUserBtn").data("userid",$(this).data("userid"))
+                    })
+                    $(".active-user-btn").on("click",activeUserBtn)
                 }
                 requestHandler(`/users?cursor=${btn.data("next")}&active=0`,"GET",success,handleRequestErrors,{},{headers:{Accept:"application/json"}})
             })
-            $(".active-user-btn").on("click",function(){
+            function activeUserBtn(){
                 const btn = $(this)
                 const success = (response)=>{
                     const row = $(`#${btn.data("userid")}`)
                     slideAnimation(row,"tbody")
                 }
                 requestHandler(`/users/active`,"PUT",success,handleRequestErrors,{users:[parseInt(btn.data("userid"))]})
-            })
+            }
+            $(".active-user-btn").on("click",activeUserBtn)
             $("#activate-users-btn").on("click",function(){
                 if(!usersToActivate.length){
                     return showToast("يرجي تحديد متسخدمين")

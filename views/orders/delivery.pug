@@ -22,6 +22,7 @@ block content
                                         th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="المحافظة"
                                         th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="المنطقة"
                                         th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="العنوان"
+                                        th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="تكلفة الشحن"
                                         th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="شركة الشحن"
                                 tbody
                                     each order of orders
@@ -33,6 +34,7 @@ block content
                                             td.align-middle.text-center=order.clientGov
                                             td.align-middle.text-center=order.clientCity
                                             td.align-middle.text-center=order.clientAddress
+                                            td.align-middle.text-center=order.shippingCost
                                             td.align-middle.text-center
                                                 select(class="form-select form-select-sm select-rtl order-shipping-select" data-orderId=order.id)
                                                     option(style='display:none')="شركة الشحن"
