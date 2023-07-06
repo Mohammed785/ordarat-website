@@ -120,7 +120,7 @@ block append scripts
                 const success = (response)=>{
                     btn.data("next",response.next)
                     if(response.next===-1){
-                        showToast("لا يوجد المزيد من المستخدمين")
+                        showToast("لا يوجد المزيد من المستخدمين","info")
                         $(this).addClass("d-none")
                     }
                     const users = response.users.map(user=>{
@@ -148,7 +148,7 @@ block append scripts
             $(".active-user-btn").on("click",activeUserBtn)
             $("#activate-users-btn").on("click",function(){
                 if(!usersToActivate.length){
-                    return showToast("يرجي تحديد متسخدمين")
+                    return showToast("يرجي تحديد متسخدمين","error")
                 }
                 const success = (response)=>{
                     for(const user of usersToActivate){

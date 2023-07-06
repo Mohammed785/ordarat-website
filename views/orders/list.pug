@@ -160,7 +160,7 @@ block append scripts
             const success = (response)=>{
                btn.data("next",response.next)
                if(response.next===-1){
-                  showToast("لا يوجد المزيد من الاوردارت")
+                  showToast("لا يوجد المزيد من الاوردارت","info")
                   $(this).addClass("d-none")
                }
                const orders = response.orders.map(order=>{
@@ -231,7 +231,7 @@ block append scripts
                $("tbody").empty();
                const nextBtn = $("#loadMore")
                if(response.next===-1){
-                  showToast("لا يوجد المزيد من الاوردارت")
+                  showToast("لا يوجد المزيد من الاوردارت","info")
                   !nextBtn.hasClass("d-none")&&nextBtn.addClass("d-none")
                }else{
                   nextBtn.removeClass("d-none")

@@ -107,7 +107,7 @@ block append scripts
                 data.color = data.color.trim()
                 const key = data.color+data.size
                 if(variants[key]){
-                    showToast("المقاس واللون موجودان مسبقا,سيتم تحديث الكمية المتوفرة الي القيمة الجديدة")
+                    showToast("المقاس واللون موجودان مسبقا,سيتم تحديث الكمية المتوفرة الي القيمة الجديدة","warning")
                     variants[key].unitAmount = data.unitAmount
                     $($(`#variant-${key}`).children()[2]).text(data.unitAmount)
                     return
@@ -125,12 +125,12 @@ block append scripts
                 </tr>`
                 $("tbody").append(variant)
                 $(".delete-btn").click(handleDeleteBtn)
-                showToast("تم اضافة اللون و المقاس بنجاح")
+                showToast("تم اضافة اللون و المقاس بنجاح","success")
             })    
             $("#productForm").on("submit",function(e){
                 e.preventDefault();
                 if(Object.keys(variants).length===0){
-                    return showToast("يرجي اضافة الوان ومقاسات لي المنتج")
+                    return showToast("يرجي اضافة الوان ومقاسات لي المنتج","warning")
                 }
                 const valid = validateInput({
                     name:{required:{message:"يرجي ادخال المنتج"}},

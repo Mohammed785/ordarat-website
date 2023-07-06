@@ -47,7 +47,7 @@ block append scripts
             const success = (response)=>{
                btn.data("next",response.next)
                if(response.next===-1){
-                  showToast("لا يوجد المزيد من المنتجات")
+                  showToast("لا يوجد المزيد من المنتجات","info")
                   $(this).addClass("d-none")
                }
                const products = response.products.map(product=>{

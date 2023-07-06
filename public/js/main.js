@@ -126,6 +126,13 @@ const validateInput = (toValidate) => {
                     break;        
                 }
             }
+            if(constraint==="isPhone"){
+                if(!/^01[0125][0-9]{8}$/.test(inputVal)){
+                    $(`#invalid-${input}`).text(schema.message);
+                    validField = false;
+                    break;
+                }
+            }
         }
         if (!validField) {
             valid = false;
@@ -136,9 +143,28 @@ const validateInput = (toValidate) => {
     }
     return valid;
 };
-const showToast = (message)=>{
+const showToast = (message,type="dark",title="اشعار")=>{
     const toast = $("#liveToast");
     toast.children(".toast-body").text(message)
+    toast.children(".toast-header").children("strong").text(title)
+    toast.removeClass("toast-info toast-error toast-warning toast-dark toast-success");
+    toast.children(".toast-header").removeClass("toast-info toast-error toast-warning toast-dark toast-success");
+    if(type==="info"){
+        toast.addClass("toast-info");
+        toast.children(".toast-header").addClass("toast-info");
+    }else if(type==="error"){
+        toast.addClass("toast-error")
+        toast.children(".toast-header").addClass("toast-error");
+    }else if(type==="success"){
+        toast.addClass("toast-success")
+        toast.children(".toast-header").addClass("toast-success");
+    }else if(type==="warning"){
+        toast.addClass("toast-warning")
+        toast.children(".toast-header").addClass("toast-warning");
+    }else{
+        toast.addClass("toast-dark")
+        toast.children(".toast-header").addClass("toast-dark");
+    }
     const toastBootstrap = bootstrap.Toast.getOrCreateInstance(toast)
     toastBootstrap.show()
 }
@@ -146,7 +172,7 @@ function getStateClass(state) {
     if (state === "غير مؤكد") {
         return "bg-gradient-dark text-white rounded p-1";
     } else if (state === "مؤكد") {
-        return "bg-gradient-success text-white rounded p-1";
+        return "bg-gradient-secondary text-white rounded p-1";
     } else if (state === "جاهز") {
         return "bg-gradient-primary text-white rounded p-1";
     } else if (state === "انتظار") {

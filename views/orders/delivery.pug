@@ -86,7 +86,7 @@ block append scripts
                 const success = (response)=>{
                     btn.data("next",response.next)
                     if(response.next===-1){
-                        showToast("لا يوجد المزيد من الاوردارت")
+                        showToast("لا يوجد المزيد من الاوردارت","info")
                         $(this).addClass("d-none")
                     }
                     if(!shippingCompanies.length&&response.shippingCompanies.length){

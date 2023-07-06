@@ -168,7 +168,7 @@ block append scripts
                     }
                 })
                 if(exists){
-                    showToast("اللون والمقاس موجدان مسبقا")
+                    showToast("اللون والمقاس موجدان مسبقا","error")
                     return
                 }
                 const success = (response)=>{
@@ -197,7 +197,7 @@ block append scripts
             const handleDeleteBtn = function(){
                 const id = $(this).closest("tr").attr("id").split("-")[1]
                 if(!id){
-                    showToast("يرجي التاكد ان المنتج موجود")
+                    showToast("يرجي التاكد ان المنتج موجود","error")
                     return
                 }
                 const success = ()=>{
@@ -212,9 +212,9 @@ block append scripts
                 const id = $(this).closest("tr").attr("id").split("-")[1]
                 const unitAmount = parseInt($(`#variant-${id}-unit`).val())
                 if(unitAmount<=0){
-                    return showToast("الكمية لا يجب ان تقل عن 0")
+                    return showToast("الكمية لا يجب ان تقل عن 0","warning")
                 }
-                requestHandler(`/api/variant/${id}`,"PUT",()=>{showToast("تم التحديث بنجاح")},handleRequestErrors,JSON.stringify({unitAmount}),{contentType:"application/json"})
+                requestHandler(`/api/variant/${id}`,"PUT",()=>{showToast("تم التحديث بنجاح","success")},handleRequestErrors,JSON.stringify({unitAmount}),{contentType:"application/json"})
             }
             $(".update-btn").click(handleUpdateBtn)
             $("#deleteProductBtn").click(function(){

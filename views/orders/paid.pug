@@ -79,7 +79,7 @@ block append scripts
                 const success = (response)=>{
                     btn.data("next",response.next)
                     if(response.next===-1){
-                        showToast("لا يوجد المزيد من الاوردارت")
+                        showToast("لا يوجد المزيد من الاوردارت","info")
                         $(this).addClass("d-none")
                     }
              
@@ -132,7 +132,7 @@ block append scripts
             $(".order-paid-btn").on("click",orderPaidBtn)
             $("#confirm-paid-btn").on("click",function(){
                 if(!paidOrders.length){
-                    return showToast("يرجي تحديد اوردرات")
+                    return showToast("يرجي تحديد اوردرات","warning")
                 }
                 const success = (response)=>{
                     for(const order of paidOrders){

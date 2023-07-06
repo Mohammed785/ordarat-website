@@ -109,7 +109,7 @@ block append scripts
                     console.log(response)
                     btn.data("next",response.next)
                     if(response.next===-1){
-                        showToast("لا يوجد المزيد من المستخدمين")
+                        showToast("لا يوجد المزيد من المستخدمين","info")
                         $(this).addClass("d-none")
                     }
                     const orders = response.orders.map(order=>{
@@ -135,7 +135,7 @@ block append scripts
             
             $("#confirm-all-orders").on("click",function(){
                 if(!ordersToConfirm.length){
-                    return showToast("يرجي تحديد اوردرات")
+                    return showToast("يرجي تحديد اوردرات","warning")
                 }
                 const success = (response)=>{
                     for(const order of ordersToConfirm){

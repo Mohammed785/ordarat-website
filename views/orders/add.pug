@@ -159,7 +159,7 @@ block append scripts
                 $("#cost").val('')
                 $("#qty").val('')
                 if(!selectedProduct){
-                    showToast("يرجي اختيار منتج")
+                    showToast("يرجي اختيار منتج","warning")
                 }else{
                     requestHandler(`/api/product/${selectedProduct}/variants`,"GET",success,(error)=>addAlert("danger",error.responseJSON.message))
                 }
@@ -168,7 +168,7 @@ block append scripts
                 selectedVariant = variants.find((variant)=>variant.id===parseInt($(this).val()));
                 if(!selectedVariant){
                     $(this).focus()
-                    showToast("يرجي اختيار لون ومقاس")
+                    showToast("يرجي اختيار لون ومقاس","warning")
                 }
                 $("#qty").val('');
                 $("#productQtyHelp").text(` اقصي عدد يمكنك شراءة للمنتج هو ${selectedVariant.unitAmount}`)
@@ -176,7 +176,7 @@ block append scripts
             $("#qty").on("change",function(){
                 if(parseInt($(this).val())>selectedVariant.unitAmount){
                     $(this).val(selectedVariant.unitAmount)
-                    showToast(`يرجي العلم ان اكبر كمية متوفرة من ${$(`#product-${selectedProduct}`).data("name")} هيا ${selectedVariant.unitAmount}`)
+                    showToast(`يرجي العلم ان اكبر كمية متوفرة من ${$(`#product-${selectedProduct}`).data("name")} هيا ${selectedVariant.unitAmount}`,"warning")
                 }
                 const cost = parseInt($(this).val())*$(`#product-${selectedProduct}`).data("sellprice");
                 $("#cost").val(cost)
@@ -186,7 +186,7 @@ block append scripts
                 const minSellPrice = parseInt($("#qty").val())*$(`#product-${selectedProduct}`).data("sellprice");
                 if(parseInt($(this).val())<minSellPrice){
                     $(this).val(minSellPrice)
-                    showToast(`يرجي العلم ان اقل سعر لبيع '${$("#qty").val()}' قطع من ${$(`#product-${selectedProduct}`).data("name")} هو ${minSellPrice}`)
+                    showToast(`يرجي العلم ان اقل سعر لبيع '${$("#qty").val()}' قطع من ${$(`#product-${selectedProduct}`).data("name")} هو ${minSellPrice}`,"warning")
                 }
             })
             $("#orderProductBtn").on("click",function(){
@@ -203,10 +203,10 @@ block append scripts
                 if(items[selectedVariant.id]){
                     items[selectedVariant.id].qty=parseInt($("#qty").val())
                     items[selectedVariant.id].cost=parseInt($("#cost").val())
-                    showToast("تم تحديث الكمية والسعر")
+                    showToast("تم تحديث الكمية والسعر","success")
                 }else{
                     items[selectedVariant.id]={product:parseInt(selectedProduct),variant:selectedVariant,qty:parseInt($("#qty").val()),cost:parseInt($("#cost").val())}
-                    showToast("تم اضافة المنتج")
+                    showToast("تم اضافة المنتج","success")
                 }
                 listItems()
                 refreshCost()
