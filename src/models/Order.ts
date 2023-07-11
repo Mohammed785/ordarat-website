@@ -42,9 +42,6 @@ export class Order extends BaseEntity {
     @Property({ nullable: true })
     clientNotes?: string;
 
-    @Property()
-    shippingCost?:number=0
-
     @Property({persist:false})
     totalCost?:number
 
@@ -54,7 +51,7 @@ export class Order extends BaseEntity {
     @Property()
     orderState?: OrderState = OrderState.NOT_CONFIRMED;
 
-    @ManyToOne(() => User, { onDelete: "cascade", ref: true })
+    @ManyToOne(() => User, { onDelete: "set null", ref: true, nullable: true })
     affiliate: Ref<User>;
 
     @ManyToOne(() => User, { onDelete: "set null", ref: true, nullable: true })
@@ -128,6 +125,9 @@ export class OrderItem extends BaseEntity {
 export class ShippingCompany extends BaseEntity {
     @Property()
     name: string;
+
+    @Property()
+    shippingCost: number;
 
     @OneToMany(() => Order, "shippedBy")
     orders = new Collection<Order>(this);
