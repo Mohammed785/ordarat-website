@@ -1,0 +1,135 @@
+extends ../layout.pug
+block content 
+   include ../navbar.pug
+   div.container-fluid.py-4
+      div.row
+        div.col
+            div.card.mb-4
+                div.card-header.pb-0
+                    h6="شركات الشحن"
+                div.card-body.px-0.pt-0.pb-2
+                    form#companyForm.px-1(method="post")
+                        div.row
+                            div.col
+                                label="اسم الشركة"
+                                input(type="text" name="name" id="name" class="form-control pe-2 rtl" placeholder="اسم الشركة" required)
+                                p.invalid-feedback#invalid-name
+                            div.col
+                                label="سعر الشحن"
+                                input(type="number" id="shippingCost" name="shippingCost" class="form-control pe-2 rtl" placeholder="سعر الشحن" required)
+                                p.invalid-feedback#invalid-shippingCost
+                        button.btn.btn-info.my-2.w-100(type="submit")="اضافة شركة"
+                    div.table-responsive.p-0
+                        table.table.align-items-center.mb-0
+                            thead 
+                                tr
+                                    th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="الاسم"
+                                    th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="سعر الشحن"
+                                    th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="تعديل الشركة"
+                                    th.text-secondary.text-xxs.font-weight-bolder.opacity-7.text-center="حذف الشركة"
+                            tbody 
+                                each company of companies
+                                    tr(id=company.id)
+                                        td.align-middle.text-center
+                                            input(type="text" value=company.name id=`name-${company.id}` class="form-control pe-2 rtl")
+                                        td.align-middle.text-center
+                                            input(type="number" value=company.shippingCost||0 id=`cost-${company.id}` class="form-control pe-2 rtl")
+                                        td.align-middle.text-center
+                                            button(type="button" class="btn btn-outline-success rounded update-company-btn mb-0" data-companyId=company.id)
+                                                i.fa.fa-check-square
+                                        td.align-middle.text-center
+                                            button(type="button" class="btn btn-outline-danger rounded delete-company-btn mb-0" data-companyId=company.id data-bs-toggle="modal" data-bs-target="#modal-delete")
+                                                i.fa.fa-trash
+                div(class="modal fade" id="modal-delete" tabindex="-1" role="dialog" aria-labelledby="modal-delete" aria-hidden="true")
+                    div(class="modal-dialog modal-danger modal-dialog-centered modal-" role="document")
+                        div.modal-content
+                            div.modal-header
+                                h6.modal-title="تحذير"
+                            div.modal-body
+                                div.py-3.text-center
+                                    i.fa.fa-exclamation-triangle.fa-lg
+                                    h4.text-gradient.text-danger.mt-4="هل انت متاكد انك تريد حذف هذة الشركة"
+                                    p="تنوية: عند حذف الشركة سيتم حذف كل المعلومات المتعلقة بة."
+                            div.modal-footer
+                                button(type="button" class="btn btn-danger" id="deleteCompanyBtn")="احذف الشركة"
+                                button(type="button" class="btn btn-white text-primary ml-auto" data-bs-dismiss="modal")="الغاء"
+
+block append scripts
+   script.
+        $(document).ready(function(){
+            function renderCompanyRow(company) {
+                return `<tr id="${company.id}">
+                        <td class="align-middle text-center">
+                            <input type="text" value="${company.name}" id="name-${company.id}" class="form-control rtl pe-2"/>
+                        </td>
+                        <td class="align-middle text-center">
+                            <input type="number" value="${company.shippingCost}" id="cost-${company.id}" class="form-control rtl pe-2"/>
+                        </td>
+                        <td class="align-middle text-center">
+                            <button type="button" class="btn btn-outline-success rounded update-company-btn mb-0" data-companyId=${company.id}>
+                                <i class="fa fa-check-square"/>
+                            </button>
+                        </td>
+                        <td class="align-middle text-center">
+                            <button type="button" class="btn btn-outline-danger rounded delete-company-btn mb-0" data-companyId=${company.id} data-bs-toggle="modal" data-bs-target="#modal-delete">
+                                <i class="fa fa-trash"/>
+                            </button>
+                        </td>     
+                    </tr>`;
+            }
+            $("#companyForm").on("submit",function(e){
+                e.preventDefault()
+                const valid = validateInput({name:{required:{message:"يرجي ادخال اسم الشركة"},length:{min:2,max:50,message:"طول الاسم يجب ان يكون مابين 2 لي 50 حرف"}},shippingCost:{required:{message:"يرجي ادخال تكلفة الشحن"},limit:{min:0,message:"تكلفة الشحن يجب ان لاتقل عن 0"},isNumber:{message:"يرجي ادخال رقم صحيح"}}})
+                if(!valid){
+                    showToast("يرجي التاكد من البيانات","error")
+                    return
+                }
+                const success = (response)=>{
+                    showToast("تم اضافة الشركة","success")
+                    const company = renderCompanyRow(response.company)
+                    $("tbody").append(company)
+                    $(".delete-company-btn").on("click",function(){
+                        $("#deleteCompanyBtn").data("companyid",$(this).data("companyid"))
+                    })
+                    $(".update-company-btn").on("click",updateCompanyBtn)
+                    $("#companyForm")[0].reset()
+                }
+                const data = Object.fromEntries(new FormData(e.target).entries())
+                data.shippingCost = parseInt(data.shippingCost)
+                requestHandler("/api/company","POST",success,handleRequestErrors,JSON.stringify(data),{contentType: "application/json"})
+            })
+            function updateCompanyBtn(){
+                const btn = $(this)
+                const companyId = btn.data("companyid")
+                const schema = {}
+                schema[`name-${companyId}`]  = {required:{message:"يرجي ادخال اسم الشركة"},length:{min:2,max:50,message:"طول الاسم يجب ان يكون مابين 2 لي 50 حرف"}}
+                schema[`cost-${companyId}`] = {required:{message:"يرجي ادخال تكلفة الشحن"},limit:{min:0,message:"تكلفة الشحن يجب ان لاتقل عن 0"},isNumber:{message:"يرجي ادخال رقم صحيح"}}
+
+                const valid = validateInput(schema)
+                if(!valid){
+                    showToast("يرجي التاكد من البيانات","error")
+                    return
+                }
+                const success = (response)=>{
+                    showToast("تم تحديث معلومات الشركة","success")
+                }
+                const data = {name:$(`#name-${companyId}`).val(),shippingCost:parseInt($(`#cost-${companyId}`).val())}
+                requestHandler(`/api/company/${companyId}`,"PUT",success,handleRequestErrors,JSON.stringify(data),{contentType: "application/json"})
+            }
+            $(".update-company-btn").on("click",updateCompanyBtn)
+            $(".delete-company-btn").on("click",function(){
+                $("#deleteCompanyBtn").data("companyid",$(this).data("companyid"))
+            })
+            $("#deleteCompanyBtn").on("click",function(){
+                const btn = $(this)
+                console.log(btn.data("companyid"))
+                const success = (response)=>{
+                    const row = $(`#${btn.data("companyid")}`)
+                    slideAnimation(row,"tbody")
+                    btn.next().click()
+                    showToast("تم حذف الشركة","success")
+                }
+                requestHandler(`/api/company/${btn.data("companyid")}`,"DELETE",success,handleRequestErrors)
+            })
+        })
+        
