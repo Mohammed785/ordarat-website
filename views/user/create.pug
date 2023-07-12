@@ -1,0 +1,69 @@
+extends ../layout.pug
+block content
+    include ../navbar.pug
+    div.container-fluid.py-4
+        div.row
+            div.col-12
+                div.card
+                    div.card-header.pb-0
+                        h6="اضافة مستخدم"
+                    div.card-body
+                        form#addUserForm(method="post")
+                            div.row
+                                div.col 
+                                    label="الاسم الاول"
+                                    div.mb-3
+                                        input(type="text" name="firstName" id="firstName" minlength="2" maxlength="25" class="form-control rtl" placeholder="ادخل الاسم الاول" aria-label="الاسم الاول" aria-describedby="invalid-firstName" required)
+                                        p.invalid-feedback#invalid-firstName
+                                div.col
+                                    label="الاسم الثاني"
+                                    div.mb-3
+                                        input(type="text" name="lastName" id="lastName" minlength="2" maxlength="25" class="form-control rtl" placeholder="ادخل الاسم الثاني" aria-label="الاسم الثاني" aria-describedby="invalid-lastName" required)
+                                        p.invalid-feedback#invalid-lastName
+                            label="رقم الهاتف"
+                            div.mb-3
+                                input(type="text" name="phone" id="phone" class="form-control rtl" minlength="11" maxlength="11" placeholder="ادخل رقم الهاتف" aria-label="رقم الهاتف" aria-describedby="invalid-phone" required)
+                                p.invalid-feedback#invalid-phone
+                            label="(اختياري) البريد الالكتروني" 
+                            div.mb-3
+                                input(type="email" class="form-control rtl" name="email" id="email" placeholder="ادخل البريد الالكتورني" aria-label="البريد الالكتروني" aria-describedby="invalid-email")
+                                p.invalid-feedback#invalid-email
+
+                            label="كلمة المرور"
+                            div.mb-3
+                                input(type="password" class="form-control rtl" minlength="8" maxlength="30" name="password" id="password" placeholder="ادخل كلمة المرور" aria-label="Password" aria-describedby="invalid-password" required)
+                                p.invalid-feedback#invalid-password
+                            label="نوع المستخدم"
+                            div.row 
+                                div.col
+                                    div.form-check
+                                        input(class="form-check-input" type="radio" name="role" id="role1" value="OPERATION" aria-describedby="invalid-role" required)
+                                        label(class="custom-control-label" for="role1")="عمليات"
+                                div.col
+                                    div.form-check
+                                        input(class="form-check-input" type="radio" name="role" id="role2" value="CALL_CENTER" aria-describedby="invalid-role" required)
+                                        label(class="custom-control-label" for="role2")="خدمة عملاء"
+                                p.invalid-feedback#invalid-role
+                            div.text-center
+                                button(type="submit" class="btn bg-gradient-dark w-100 my-4 mb-2")="اضافة المستخدم"
+
+block append scripts
+  script.
+    $("#addUserForm").submit((e)=>{
+        e.preventDefault();
+        const valid = validateInput({
+            firstName:{required:{message:"يرجي ادخال الاسم الاول"},length:{min:2,max:25,message:"يجب ان يكون طول الاسم الاول مابين 2 لي 25 حرف"}},
+            lastName:{required:{message:"يرجي ادخال الاسم الثاني"},length:{min:2,max:25,message:"يجب ان يكون طول الاسم الثاني مابين 2 لي 25 حرف"}},
+            email:{optional:true,isEmail:{message:"يرجي ادخال بريد الكتروني صحيح"}},
+            phone:{required:{message:"يرجي ادخال رقم الهاتف"},regex:{regex:/^01[0125][0-9]{8}$/,message:"يرجي ادخال رقم هاتف صحيح"}},
+            password:{required:{message:"يرجي ادخال كلمة المرور"},length:{min:8,max:30,message:"يجب ان يكون طول كلمة المرور مابين 8 لي 30 حرف"}},
+        })
+        if(!valid){
+            return
+        }
+        const data = Object.fromEntries(new FormData(e.target).entries())
+        if(!data.email){
+            delete data.email
+        }
+        requestHandler("/api/team/add","POST",(data)=>addAlert("success","تم انشاء حساب بنجاح"),handleRequestErrors,data)
+    })
