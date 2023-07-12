@@ -14,8 +14,8 @@ export class User extends BaseEntity{
     @Property({index:true,unique:true})
     phone:string
     
-    @Property({unique:true})
-    email:string
+    @Property({unique:true,nullable:true})
+    email?:string
 
     @Property({hidden:true})
     password:string

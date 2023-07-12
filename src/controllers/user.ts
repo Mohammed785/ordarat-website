@@ -2,21 +2,26 @@ import { Router } from "express";
 import rolesMiddleware from "../middlewares/rolesMiddleware";
 import { FinancialRecord, UserRoles } from "../models/User";
 import { DI } from "../server";
-import { ErrorCodes, NotFoundError } from "../utils/errors";
+import { ErrorCodes, NotFoundError, StatusCodes } from "../utils/errors";
 import { EntityManager } from "@mikro-orm/sqlite";
+import { validationMiddleware } from "../middlewares/validationMiddleware";
+import { UserCreateDTO } from "../dto/auth";
+import { genSalt, hash } from "bcrypt";
+import { UniqueConstraintViolationException } from "@mikro-orm/core";
 
 export const usersRouter = Router();
 
 usersRouter.get("/",async(req,res)=>{
     const qb = (DI.em as EntityManager).createQueryBuilder(FinancialRecord,"fr")
     const profits = await qb.select(
-        `id,SUM(IIF(record_type="مؤكد",amount,0)) AS confirmedBalance,
-        SUM(IIF(record_type="تحت التاكيد",amount,0)) AS unconfirmedBalance,
-        COUNT(DISTINCT order_id) AS ordersCount`
+        '`fr`.`id`,\
+        SUM(IIF(`fr`.`record_type`="مؤكد",`fr`.`amount`,0)) AS confirmedBalance,\
+        SUM(IIF(`fr`.`record_type`="تحت التاكيد",`fr`.`amount`,0)) AS unconfirmedBalance,\
+        COUNT(DISTINCT `fr`.`order_id`) AS ordersCount'
     ).where({user:req.session.user?.id})
     .cache(true)
-    .getSingleResult()
-    return res.render("home.pug",{user:req.session.user,profits})
+    .execute()
+    return res.render("home.pug",{user:req.session.user,profits:profits[0]})
 })
 
 usersRouter.get(
@@ -50,6 +55,37 @@ usersRouter.get(
         });
     }
 );
+
+usersRouter.get("/team/add",rolesMiddleware([UserRoles.ADMIN]),async(req,res)=>{
+    return res.render("user/create",{user:req.session.user})
+})
+
+usersRouter.post("/api/team/add",rolesMiddleware([UserRoles.ADMIN]),validationMiddleware(UserCreateDTO),async(req,res)=>{
+    try {
+        req.body.password = await hash(req.body.password, await genSalt());
+        const user = DI.userRepository.create({...req.body,isActive:true});
+        await DI.em.persistAndFlush(user);
+        return res.json({ user });
+    } catch (error) {
+        if (error instanceof UniqueConstraintViolationException) {
+            let field = error.message.split(":").at(-1)!.trim().split(".")[1];
+            if (field === "email") {
+                return res
+                    .status(StatusCodes.BAD_REQUEST)
+                    .json({
+                        code: ErrorCodes.VALIDATION,
+                        errors: { email: "البريد الالكتروني مستخدم من قبل" },
+                    });
+            } else {
+                return res.status(StatusCodes.BAD_REQUEST).json({
+                    code: ErrorCodes.VALIDATION,
+                    errors: { phone: "رقم الهاتف مستخدم من قبل" },
+                });
+            }
+        }
+        throw error;
+    }
+})
 
 usersRouter.get("/profile", async (req, res) => {
     const user = await DI.userRepository.findOne({ id: req.session.user!.id });
